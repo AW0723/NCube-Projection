@@ -29,6 +29,29 @@ public class NCubeCreator : MonoBehaviour
 
     }
 
+    private void FixedUpdate()
+    {
+        foreach (var line in lines)
+        {
+            VectorN point1 = points[line.Item1];
+            VectorN point2 = points[line.Item2];
+            Vector3 pos1 = new Vector3(point1[0], point1[1], point1[2]);
+            Vector3 pos2 = new Vector3(point2[0], point2[1], point2[2]);
+
+            Debug.DrawLine(pos1, pos2);
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.white;
+        foreach (var point in points)
+        {
+            Vector3 pos = new Vector3(point[0], point[1], point[2]);
+            Gizmos.DrawSphere(pos, 0.05f);
+        }
+    }
+
     private void BuildNCube(int dimension)
     {
         if (dimension < 1) { throw new System.Exception(); }
