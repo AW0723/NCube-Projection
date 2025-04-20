@@ -134,7 +134,7 @@ GameObject:
   - component: {fileID: 146909595}
   - component: {fileID: 146909596}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: NCubeProjection
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -167,7 +167,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41e8524a0c306f64493a3260a6ed7bcd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dimension: 4
+  dimension: 3
   position: []
 --- !u!1 &705507993
 GameObject:

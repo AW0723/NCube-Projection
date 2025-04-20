@@ -18,6 +18,7 @@ public class VectorN
 
     public VectorN(VectorN copy)
     {
+        components = new float[copy.components.Length];
         Array.Copy(copy.components, components, copy.components.Length);
     }
 
