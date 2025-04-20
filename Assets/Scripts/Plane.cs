@@ -11,6 +11,4 @@ public class Plane
         lines.Add(line3);
         lines.Add(line4);
     }
-
-
 }

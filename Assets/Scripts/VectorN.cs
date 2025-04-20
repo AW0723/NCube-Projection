@@ -68,6 +68,23 @@ public class VectorN
         return new VectorN(a.components.Select(x => -x));
     }
 
+    public static VectorN operator *(float num, VectorN vector)
+    {
+        float[] components = new float[vector.components.Length];
+        Array.Copy(vector.components, components, vector.components.Length);
+        for (int i = 0; i < components.Length; i++)
+        {
+            components[i] *= num;
+        }
+        return new VectorN(components);
+    }
+
+    public static VectorN operator *(VectorN vector, float num)
+    {
+        return num * vector;
+    }
+
+
     public static float[] Map(float[] a, float[] b, Func<float, float, float> f)
     {
         if (a.Length != b.Length) throw new Exception("Dimensions do not match");
