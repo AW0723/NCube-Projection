@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NCubeCreator : MonoBehaviour
+public class NCubeController : MonoBehaviour
 {
     public int dimension;
     public List<float> position;
@@ -49,6 +49,14 @@ public class NCubeCreator : MonoBehaviour
         {
             Vector3 pos = new Vector3(point[0], point[1], point[2]);
             Gizmos.DrawSphere(pos, 0.05f);
+        }
+    }
+
+    public void Translate(int axis, float amount)
+    {
+        for (int i = 0; i < points.Count; i++)
+        {
+            points[i] += VectorN.unit(dimension, axis - 1) * amount;
         }
     }
 
