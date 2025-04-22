@@ -6,6 +6,16 @@ public class VectorN
 {
     public float[] components { get; private set; }
 
+    public int dimension
+    {
+        get { return components.Length; }
+    }
+
+    public VectorN(int dimension)
+    {
+        components = new float[dimension];
+    }
+
     public VectorN(params float[] components)
     {
         this.components = components;
@@ -84,7 +94,6 @@ public class VectorN
         return num * vector;
     }
 
-
     public static float[] Map(float[] a, float[] b, Func<float, float, float> f)
     {
         if (a.Length != b.Length) throw new Exception("Dimensions do not match");
@@ -114,5 +123,17 @@ public class VectorN
         float[] array = new float[dimension];
         Array.Fill(array, value);
         return new VectorN(array);
+    }
+
+    public static float Dot(VectorN a, VectorN b)
+    {
+        if (a.dimension != b.dimension) throw new Exception("Dimensions must match.");
+
+        float result = 0;
+        for (int i = 0; i < a.dimension; i++)
+        {
+            result += a.components[i] * b.components[i];
+        }
+        return result;
     }
 }

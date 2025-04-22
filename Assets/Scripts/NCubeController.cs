@@ -6,21 +6,15 @@ public class NCubeController : MonoBehaviour
     public int dimension;
     public List<float> position;
 
+    private VectorN origin;
     private List<VectorN> points = new List<VectorN>();
     private List<(int, int)> lines = new List<(int, int)>();
 
     // Start is called before the first frame update
     void Start()
     {
+        origin = VectorN.zero(dimension);
         BuildNCube(dimension);
-        foreach (VectorN point in points)
-        {
-            Debug.Log(point);
-        }
-        foreach (var line in lines)
-        {
-            Debug.Log(line);
-        }
     }
 
     // Update is called once per frame
@@ -44,7 +38,7 @@ public class NCubeController : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.white;
+        Gizmos.color = new Color(1, 1, 1, 1);
         foreach (var point in points)
         {
             Vector3 pos = new Vector3(point[0], point[1], point[2]);
@@ -54,9 +48,32 @@ public class NCubeController : MonoBehaviour
 
     public void Translate(int axis, float amount)
     {
+        VectorN direction = VectorN.unit(dimension, axis - 1);
         for (int i = 0; i < points.Count; i++)
         {
-            points[i] += VectorN.unit(dimension, axis - 1) * amount;
+            points[i] += direction * amount;
+        }
+        origin += direction * amount;
+    }
+
+    public void Rotate(int axisA, int axisB, float amount)
+    {
+        if (axisA == axisB)
+        {
+            throw new System.Exception("Axes cannot be the same");
+        }
+        axisA = axisA - 1;
+        axisB = axisB - 1;
+
+        MatrixNxN rotationMatrix = MatrixNxN.identity(dimension);
+        rotationMatrix[axisA, axisA] = Mathf.Cos(amount);
+        rotationMatrix[axisA, axisB] = -Mathf.Sin(amount);
+        rotationMatrix[axisB, axisA] = Mathf.Sin(amount);
+        rotationMatrix[axisB, axisB] = Mathf.Cos(amount);
+
+        for (int i = 0; i < points.Count; i++)
+        {
+            points[i] = rotationMatrix * points[i];
         }
     }
 
@@ -85,5 +102,15 @@ public class NCubeController : MonoBehaviour
                 lines.Add((currPoint, points.Count - 1));
             }
         }
+    }
+
+    private void FindIntersection()
+    {
+
+    }
+
+    private void FindLineIntersection(VectorN pointA, VectorN pointB)
+    {
+
     }
 }
