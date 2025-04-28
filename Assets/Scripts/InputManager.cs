@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -18,42 +19,55 @@ public class InputManager : MonoBehaviour
     public float keySensitivity = 0.1f;
     public float scrollSensitivity = 0.1f;
 
-    private TransformationMethod selectedMethod;
-    private int selectedAxis;
+    private TransformationMethod SelectedMethod;
+    private int SelectedAxis;
 
     // Start is called before the first frame update
     void Start()
     {
         SetTranslationAxis(1);
+        SelectedMethod = TransformationMethod.Rotation;
 
-
+        rotationAxisADropdown.ClearOptions();
+        rotationAxisBDropdown.ClearOptions();
+        List<string> options = new List<string>();
+        for (int i = 1; i <= nCubeController.dimension; i++)
+        {
+            options.Add(i.ToString());
+        }
+        rotationAxisADropdown.AddOptions(options);
+        rotationAxisBDropdown.AddOptions(options);
+        rotationAxisBDropdown.value = options.Count - 1;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
         {
-            SetTranslationAxis(selectedAxis + 1);
+            if (SelectedMethod == TransformationMethod.Translation)
+            {
+                SetTranslationAxis(SelectedAxis + 1);
+            }
         }
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
         {
-            SetTranslationAxis(selectedAxis - 1);
+            if (SelectedMethod == TransformationMethod.Translation)
+            {
+                SetTranslationAxis(SelectedAxis - 1);
+            }
         }
-        if (Input.GetKey(KeyCode.LeftArrow))
+        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A))
         {
-            //nCubeController.Translate(selectedAxis, -keySensitivity);
-            nCubeController.Rotate(2, 3, -0.01f);
-
+            PerformTransformation(-keySensitivity * Time.deltaTime);
         }
-        if (Input.GetKey(KeyCode.RightArrow))
+        if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D))
         {
-            //nCubeController.Translate(selectedAxis, keySensitivity);
-            nCubeController.Rotate(1, 3, 0.01f);
+            PerformTransformation(keySensitivity * Time.deltaTime);
         }
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
-            nCubeController.Translate(selectedAxis, Input.GetAxis("Mouse ScrollWheel") * scrollSensitivity);
+            PerformTransformation(Input.GetAxis("Mouse ScrollWheel") * scrollSensitivity * Time.deltaTime);
         }
     }
 
@@ -62,14 +76,30 @@ public class InputManager : MonoBehaviour
         switch (transformationMethodDropdown.value)
         {
             case 0:
-                selectedMethod = TransformationMethod.Translation;
+                SelectedMethod = TransformationMethod.Rotation;
+                translationParent.SetActive(false);
+                rotationParent.SetActive(true);
+                break;
+            case 1:
+                SelectedMethod = TransformationMethod.Translation;
                 translationParent.SetActive(true);
                 rotationParent.SetActive(false);
                 break;
-            case 1:
-                selectedMethod = TransformationMethod.Rotation;
-                translationParent.SetActive(false);
-                rotationParent.SetActive(true);
+        }
+    }
+
+    private void PerformTransformation(float amount)
+    {
+        switch (SelectedMethod)
+        {
+            case TransformationMethod.Translation:
+                nCubeController.Translate(SelectedAxis, amount);
+                break;
+            case TransformationMethod.Rotation:
+                if (rotationAxisADropdown.value != rotationAxisBDropdown.value)
+                {
+                    nCubeController.Rotate(rotationAxisADropdown.value + 1, rotationAxisBDropdown.value + 1, amount);
+                }
                 break;
         }
     }
@@ -78,7 +108,7 @@ public class InputManager : MonoBehaviour
     {
         if (axis > 0 && axis <= nCubeController.dimension)
         {
-            selectedAxis = axis;
+            SelectedAxis = axis;
             translationAxisText.text = "Current Axis: " + axis;
         }
     }
