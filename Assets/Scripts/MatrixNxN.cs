@@ -66,7 +66,7 @@ public class MatrixNxN
         VectorN[] columns = new VectorN[dimension];
         for (int i = 0; i < columns.Length; i++)
         {
-            columns[i] = VectorN.zero(dimension);
+            columns[i] = VectorN.Zero(dimension);
             columns[i][i] = 1;
         }
         return new MatrixNxN(columns);
@@ -79,7 +79,7 @@ public class MatrixNxN
             throw new Exception("Matrix and vector dimensions must match");
         }
 
-        VectorN result = VectorN.zero(matrix.dimension);
+        VectorN result = VectorN.Zero(matrix.dimension);
         for (int i = 0; i < matrix.dimension; i++)
         {
             result += vector[i] * matrix.columns[i];

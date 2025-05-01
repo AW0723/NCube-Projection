@@ -19,7 +19,7 @@ public class NCubeController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Origin = VectorN.zero(dimension);
+        Origin = VectorN.Zero(dimension);
         BuildNCube(dimension);
         FindIntersection();
 
@@ -45,24 +45,13 @@ public class NCubeController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (debugLines)
-        {
-            foreach (var line in Lines)
-            {
-                VectorN point1 = Points[line.Item1];
-                VectorN point2 = Points[line.Item2];
 
-                // TODO: allow some kind of casting from VectorN to Vector3
-                Vector3 pos1 = new Vector3(point1[0], point1[1], point1.dimension > 2 ? point1[2] : 0);
-                Vector3 pos2 = new Vector3(point2[0], point2[1], point2.dimension > 2 ? point2[2] : 0);
-
-                Debug.DrawLine(pos1, pos2);
-            }
-        }
     }
 
     private void OnDrawGizmos()
     {
+        DebugDraw();
+
         Gizmos.color = new Color(1, 1, 1, 1);
         foreach (var pos in IntersectionPoints)
         {
@@ -76,9 +65,27 @@ public class NCubeController : MonoBehaviour
         }
     }
 
+    private void DebugDraw()
+    {
+        if (debugLines)
+        {
+            Gizmos.color = Color.yellow;
+            List<Vector3> points = new List<Vector3>();
+            foreach (var line in Lines)
+            {
+                VectorN point1 = Points[line.Item1];
+                VectorN point2 = Points[line.Item2];
+
+                points.Add(point1.toVector3());
+                points.Add(point2.toVector3());
+            }
+            Gizmos.DrawLineList(points.ToArray());
+        }
+    }
+
     public void Translate(int axis, float amount)
     {
-        VectorN direction = VectorN.unit(dimension, axis - 1);
+        VectorN direction = VectorN.Unit(dimension, axis - 1);
         for (int i = 0; i < Points.Count; i++)
         {
             Points[i] += direction * amount;
@@ -115,7 +122,7 @@ public class NCubeController : MonoBehaviour
     {
         if (dimension < 1) { throw new System.Exception(); }
 
-        Points.Add(VectorN.zero(dimension));
+        Points.Add(VectorN.Zero(dimension));
         for (int currDimension = 1; currDimension <= dimension; currDimension++)
         {
             int pointsCount = Points.Count;
@@ -146,7 +153,7 @@ public class NCubeController : MonoBehaviour
 
             for (int currPoint = 0; currPoint < pointsCount; currPoint++)
             {
-                VectorN offset = VectorN.unit(dimension, currDimension - 1);
+                VectorN offset = VectorN.Unit(dimension, currDimension - 1);
                 Points.Add(Points[currPoint] + offset);
                 Points[currPoint] -= offset;
 
@@ -155,12 +162,13 @@ public class NCubeController : MonoBehaviour
         }
     }
 
+    // TODO: generalize to higher dimension
     private void FindIntersection()
     {
         IntersectionPoints.Clear();
         foreach (var line in Lines)
         {
-            Vector3? position = FindLineIntersection(Points[line.Item1], Points[line.Item2]);
+            Vector3? position = FindLineIntersection(Points[line.Item1], Points[line.Item2], 4);
             if (position != null)
             {
                 IntersectionPoints.Add(position.Value);
@@ -174,7 +182,7 @@ public class NCubeController : MonoBehaviour
             foreach (var currLine in face)
             {
                 (int, int) line = Lines[currLine];
-                Vector3? point = FindLineIntersection(Points[line.Item1], Points[line.Item2]);
+                Vector3? point = FindLineIntersection(Points[line.Item1], Points[line.Item2], 4);
                 if (point != null)
                 {
                     faceIntersectionPoints.Add(point.Value);
@@ -187,17 +195,25 @@ public class NCubeController : MonoBehaviour
         }
     }
 
-    private Vector3? FindLineIntersection(VectorN pointA, VectorN pointB)
+    /// <summary>
+    /// Find the intersection point of a line with the plane where the nth dimension is 0
+    /// </summary>
+    /// <param name="pointA">Point A of the line</param>
+    /// <param name="pointB">Point B of the line</param>
+    /// <param name="dimension">The dimensional component that should be 0</param>
+    /// <returns></returns>
+    private Vector3? FindLineIntersection(VectorN pointA, VectorN pointB, int dimension)
     {
-        // TODO: generalize to higher dimensions
-        if (pointA[3] == pointB[3] || pointA[3] * pointB[3] >= 0)
+        int index = dimension - 1;
+
+        if (pointA[index] == pointB[index] || pointA[index] * pointB[index] >= 0)
         {
             return null;
         }
-        float k = pointA[3] / (pointA[3] - pointB[3]);
+        float k = pointA[index] / (pointA[index] - pointB[index]);
         VectorN vectorA = pointA * (1 - k);
         VectorN vectorB = pointB * k;
         VectorN result = vectorA + vectorB;
-        return new Vector3(result[0], result[1], result[2]);
+        return result.toVector3();
     }
 }

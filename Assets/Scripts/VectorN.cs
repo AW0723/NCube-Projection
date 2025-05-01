@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public class VectorN
 {
@@ -52,6 +53,16 @@ public class VectorN
         }
     }
 
+    public VectorN Reduce(int dimension)
+    {
+        return Reduce(this, dimension);
+    }
+
+    public Vector3 toVector3()
+    {
+        return toVector3(this);
+    }
+
     public override string ToString()
     {
         string result = "[";
@@ -100,25 +111,25 @@ public class VectorN
         return a.Zip(b, (x, y) => f(x, y)).ToArray();
     }
 
-    public static VectorN zero(int dimension)
+    public static VectorN Zero(int dimension)
     {
-        return fill(dimension, 0);
+        return Fill(dimension, 0);
     }
 
-    public static VectorN one(int dimension)
+    public static VectorN One(int dimension)
     {
-        return fill(dimension, 1);
+        return Fill(dimension, 1);
     }
 
-    public static VectorN unit(int dimension, int index)
+    public static VectorN Unit(int dimension, int index)
     {
         if (index >= dimension) throw new IndexOutOfRangeException("Index cannot be larger or equal to dimension.");
-        VectorN result = zero(dimension);
+        VectorN result = Zero(dimension);
         result.components[index] = 1;
         return result;
     }
 
-    public static VectorN fill(int dimension, float value)
+    public static VectorN Fill(int dimension, float value)
     {
         float[] array = new float[dimension];
         Array.Fill(array, value);
@@ -134,6 +145,20 @@ public class VectorN
         {
             result += a.components[i] * b.components[i];
         }
+        return result;
+    }
+
+    public static VectorN Reduce(VectorN vector, int dimension)
+    {
+        float[] components = new float[dimension];
+        Array.Copy(vector.components, components, dimension);
+        return new VectorN(components);
+    }
+
+    public static Vector3 toVector3(VectorN vector)
+    {
+        VectorN reduced = vector.Reduce(3);
+        Vector3 result = new Vector3(reduced[0], reduced[1], reduced[2]);
         return result;
     }
 }

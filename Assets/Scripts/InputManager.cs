@@ -16,8 +16,8 @@ public class InputManager : MonoBehaviour
     public TMP_Dropdown rotationAxisADropdown;
     public TMP_Dropdown rotationAxisBDropdown;
 
-    public float keySensitivity = 0.1f;
-    public float scrollSensitivity = 0.1f;
+    public float keySensitivity = 1.5f;
+    public float scrollSensitivity = 20f;
 
     private TransformationMethod SelectedMethod;
     private int SelectedAxis;
@@ -25,7 +25,7 @@ public class InputManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        SetTranslationAxis(1);
+        SetTranslationAxis(nCubeController.dimension);
         SelectedMethod = TransformationMethod.Rotation;
 
         rotationAxisADropdown.ClearOptions();
