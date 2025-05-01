@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -12,6 +13,7 @@ public class NCubeController : MonoBehaviour
     private List<VectorN> Points = new List<VectorN>();
     private List<(int, int)> Lines = new List<(int, int)>();
     private List<List<int>> Faces = new List<List<int>>();
+    private List<List<int[]>> Simplices = new List<List<int[]>>();
 
     private List<Vector3> IntersectionPoints = new List<Vector3>();
     private List<(Vector3, Vector3)> IntersectionLines = new List<(Vector3, Vector3)>();
@@ -20,20 +22,34 @@ public class NCubeController : MonoBehaviour
     void Start()
     {
         Origin = VectorN.Zero(dimension);
-        BuildNCube(dimension);
-        FindIntersection();
 
+        //BuildNCube(dimension);
+        //foreach (var point in Points)
+        //{
+        //    Debug.Log(point);
+        //}
+        //foreach (var line in Lines)
+        //{
+        //    Debug.Log(string.Join(" ", line.Item1, line.Item2, Points[line.Item1], Points[line.Item2]));
+        //}
+        //foreach (var face in Faces)
+        //{
+        //    Debug.Log(string.Join(" ", face));
+        //}
+
+        //FindIntersection();
+
+        BuildNCube2(dimension);
         foreach (var point in Points)
         {
             Debug.Log(point);
         }
-        foreach (var line in Lines)
+        foreach (var simplices in Simplices)
         {
-            Debug.Log(string.Join(" ", line.Item1, line.Item2, Points[line.Item1], Points[line.Item2]));
-        }
-        foreach (var face in Faces)
-        {
-            Debug.Log(string.Join(" ", face));
+            foreach (var simplex in simplices)
+            {
+                Debug.Log(string.Join(" ", simplex));
+            }
         }
     }
 
@@ -99,7 +115,7 @@ public class NCubeController : MonoBehaviour
     {
         if (axisA == axisB)
         {
-            throw new System.Exception("Axes cannot be the same");
+            throw new Exception("Axes cannot be the same");
         }
         axisA = axisA - 1;
         axisB = axisB - 1;
@@ -120,7 +136,7 @@ public class NCubeController : MonoBehaviour
 
     private void BuildNCube(int dimension)
     {
-        if (dimension < 1) { throw new System.Exception(); }
+        if (dimension < 1) { throw new Exception(); }
 
         Points.Add(VectorN.Zero(dimension));
         for (int currDimension = 1; currDimension <= dimension; currDimension++)
@@ -162,13 +178,70 @@ public class NCubeController : MonoBehaviour
         }
     }
 
+    private void BuildNCube2(int dimension)
+    {
+        if (dimension < 1) { throw new Exception(); }
+
+        for (int currDimension = 0; currDimension <= dimension; currDimension++)
+        {
+            Simplices.Add(new List<int[]>());
+        }
+
+        Points.Add(VectorN.Zero(dimension));
+        for (int currDimension1 = 1; currDimension1 <= dimension; currDimension1++)
+        {
+            int pointsCount = Points.Count;
+
+            int[] initSimplexCount = Simplices.Select(simplices => simplices.Count).ToArray();
+            for (int currDimension2 = currDimension1; currDimension2 > 0; currDimension2--)
+            {
+                int simplexCount = initSimplexCount[currDimension2];
+                int lowerSimplexCount = currDimension2 == 1 ? Points.Count : initSimplexCount[currDimension2 - 1];
+                for (int currSimplex = 0; currSimplex < simplexCount; currSimplex++)
+                {
+                    int[] simplex = Simplices[currDimension2][currSimplex];
+
+                    int[] copiedSimplex = new int[simplex.Length];
+                    Array.Copy(simplex, copiedSimplex, simplex.Length);
+                    for (int i = 0; i < copiedSimplex.Length; i++)
+                    {
+                        copiedSimplex[i] += lowerSimplexCount;
+                    }
+                    Simplices[currDimension2].Add(copiedSimplex);
+
+                    if (currDimension2 < dimension)
+                    {
+                        int[] higherSimplex = new int[2 * (currDimension2 + 1)];
+                        higherSimplex[0] = currSimplex;
+                        higherSimplex[1] = Simplices[currDimension2].Count - 1;
+
+                        for (int i = 0; i < simplex.Length; i++)
+                        {
+                            higherSimplex[i + 2] = simplex[i] + 2 * simplexCount;
+                        }
+                        Simplices[currDimension2 + 1].Add(higherSimplex);
+                    }
+                }
+            }
+
+            for (int currPoint = 0; currPoint < pointsCount; currPoint++)
+            {
+                VectorN offset = VectorN.Unit(dimension, currDimension1 - 1);
+                Points.Add(Points[currPoint] + offset);
+                Points[currPoint] -= offset;
+
+                Simplices[1].Add(new int[] { currPoint, Points.Count - 1 });
+            }
+        }
+    }
+
     // TODO: generalize to higher dimension
     private void FindIntersection()
     {
         IntersectionPoints.Clear();
         foreach (var line in Lines)
         {
-            Vector3? position = FindLineIntersection(Points[line.Item1], Points[line.Item2], 4);
+            Vector3? position = FindLineIntersection(Points[line.Item1], Points[line.Item2], dimension);
             if (position != null)
             {
                 IntersectionPoints.Add(position.Value);
@@ -182,7 +255,7 @@ public class NCubeController : MonoBehaviour
             foreach (var currLine in face)
             {
                 (int, int) line = Lines[currLine];
-                Vector3? point = FindLineIntersection(Points[line.Item1], Points[line.Item2], 4);
+                Vector3? point = FindLineIntersection(Points[line.Item1], Points[line.Item2], dimension);
                 if (point != null)
                 {
                     faceIntersectionPoints.Add(point.Value);

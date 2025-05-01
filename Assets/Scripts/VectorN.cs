@@ -151,7 +151,7 @@ public class VectorN
     public static VectorN Reduce(VectorN vector, int dimension)
     {
         float[] components = new float[dimension];
-        Array.Copy(vector.components, components, dimension);
+        Array.Copy(vector.components, components, Mathf.Min(dimension, vector.dimension));
         return new VectorN(components);
     }
 
