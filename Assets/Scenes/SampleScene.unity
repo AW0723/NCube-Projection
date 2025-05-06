@@ -383,7 +383,7 @@ MonoBehaviour:
   dimension: 6
   debugLines: 0
   debugIntersectionDimension: 4
-  draw3d: 1
+  draw3D: 1
 --- !u!1 &196492224
 GameObject:
   m_ObjectHideFlags: 0
