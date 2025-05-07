@@ -69,6 +69,10 @@ public class InputManager : MonoBehaviour
         {
             PerformTransformation(Input.GetAxis("Mouse ScrollWheel") * scrollSensitivity * Time.deltaTime);
         }
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            RandomizeRotation();
+        }
     }
 
     public void OnTransformationMethodChanged()
@@ -101,6 +105,14 @@ public class InputManager : MonoBehaviour
                     nCubeController.Rotate(rotationAxisADropdown.value + 1, rotationAxisBDropdown.value + 1, amount);
                 }
                 break;
+        }
+    }
+
+    private void RandomizeRotation()
+    {
+        for (int i = 1; i < nCubeController.dimension; i++)
+        {
+            nCubeController.Rotate(i, nCubeController.dimension, Random.Range(0, 2 * Mathf.PI));
         }
     }
 
