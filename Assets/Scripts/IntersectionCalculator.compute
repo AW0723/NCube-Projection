@@ -1,0 +1,37 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+uint dimension;
+uint pointsCount;
+StructuredBuffer<float> pointsA;
+StructuredBuffer<float> pointsB;
+RWStructuredBuffer<float> result;
+
+RWStructuredBuffer<uint> debugX;
+RWStructuredBuffer<uint> debugY;
+
+uint groupSizeX;
+uint groupSizeY;
+
+[numthreads(2,2,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    uint pointsIndex = id.y * (2 * groupSizeX) + id.x;
+    if(pointsIndex >= pointsCount)
+    {
+        return;
+    }
+    
+    float k;
+    
+    debugX[id.x] = id.x;
+    debugY[id.y] = id.y;
+    
+    uint componentsIndex = pointsIndex * dimension;
+    uint resultIndex = pointsIndex * (dimension - 1);
+    
+    for (uint i = 0; i < dimension - 1; i++)
+    {
+        result[resultIndex + i] = pointsA[componentsIndex + i] + pointsB[componentsIndex + i];
+    }
+}

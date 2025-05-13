@@ -301,6 +301,6 @@ public class NCubeController : MonoBehaviour
         VectorN vectorA = pointA * (1 - k);
         VectorN vectorB = pointB * k;
         VectorN result = vectorA + vectorB;
-        return result;
+        return result.Reduce(dimension - 1);
     }
 }
