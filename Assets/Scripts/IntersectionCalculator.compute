@@ -13,25 +13,42 @@ RWStructuredBuffer<uint> debugY;
 uint groupSizeX;
 uint groupSizeY;
 
-[numthreads(2,2,1)]
+[numthreads(4,4,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    uint pointsIndex = id.y * (2 * groupSizeX) + id.x;
+    uint pointsIndex = id.y * (4 * groupSizeX) + id.x;
     if(pointsIndex >= pointsCount)
     {
         return;
     }
     
-    float k;
-    
     debugX[id.x] = id.x;
     debugY[id.y] = id.y;
     
     uint componentsIndex = pointsIndex * dimension;
+    uint lastComponentIndex = componentsIndex + dimension - 1;
     uint resultIndex = pointsIndex * (dimension - 1);
+    
+    float lastComponentA = pointsA[lastComponentIndex];
+    float lastComponentB = pointsB[lastComponentIndex];
+    
+    bool invalid = lastComponentA == lastComponentB || lastComponentA * lastComponentB >= 0;
+    float nanValue = 0.0f / 0.0f;
+    
+    float k = lastComponentA / (lastComponentA - lastComponentB);
     
     for (uint i = 0; i < dimension - 1; i++)
     {
-        result[resultIndex + i] = pointsA[componentsIndex + i] + pointsB[componentsIndex + i];
+        if (invalid)
+        {
+            result[resultIndex + i] = nanValue;
+        }
+        else
+        {
+            uint currComponent = componentsIndex + i;
+            float componentA = pointsA[currComponent] * (1 - k);
+            float componentB = pointsB[currComponent] * k;
+            result[resultIndex + i] = componentA + componentB;
+        }
     }
 }

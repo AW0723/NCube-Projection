@@ -3,79 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class NewBehaviourScript : MonoBehaviour
+public class ShaderInterface : MonoBehaviour
 {
+    public NCubeController controller;
     public ComputeShader computeShader;
 
     // Start is called before the first frame update
     void Start()
     {
-        List<VectorN> pointsA = new List<VectorN>()
-        {
-            new VectorN(100, 2, 3),
-            new VectorN(4, 5, 6),
-            new VectorN(7, 1, 9),
-            new VectorN(10, 11, 12),
-            new VectorN(13, 14, 15),
-            new VectorN(16, 17, 18),
-            new VectorN(19, 20, 21),
-            new VectorN(22, 23, 24),
-            new VectorN(25, 26, 27),
-            new VectorN(28, 29, 30),
-            new VectorN(31, 32, 33),
-            new VectorN(34, 35, 36),
-            new VectorN(37, 38, 39),
-            new VectorN(40, 41, 42),
-            new VectorN(43, 44, 45),
-            new VectorN(46, 47, 48),
-            new VectorN(49, 50, 51),
-            new VectorN(52, 53, 54),
-            new VectorN(55, 56, 57),
-            new VectorN(58, 59, 60),
-            new VectorN(61, 62, 63),
-            new VectorN(64, 65, 66),
-            new VectorN(67, 68, 69),
-            new VectorN(70, 71, 72),
-            new VectorN(73, 74, 75),
-            new VectorN(76, 77, 78),
-            new VectorN(79, 80, 81),
-            new VectorN(82, 83, 84),
-            new VectorN(85, 86, 87),
-            new VectorN(88, 89, 90),
-        };
-        List<VectorN> pointsB = new List<VectorN>()
-        {
-            new VectorN(1, 2, 3),
-            new VectorN(4, 5, 6),
-            new VectorN(7, 8, 9),
-            new VectorN(10, 1, 12),
-            new VectorN(13, 14, 15),
-            new VectorN(16, 17, 18),
-            new VectorN(19, 20, 21),
-            new VectorN(22, 23, 24),
-            new VectorN(25, 26, 27),
-            new VectorN(28, 29, 30),
-            new VectorN(31, 32, 33),
-            new VectorN(34, 35, 36),
-            new VectorN(37, 38, 39),
-            new VectorN(40, 41, 42),
-            new VectorN(43, 44, 45),
-            new VectorN(46, 47, 48),
-            new VectorN(49, 50, 51),
-            new VectorN(52, 53, 54),
-            new VectorN(55, 56, 57),
-            new VectorN(58, 59, 60),
-            new VectorN(61, 62, 63),
-            new VectorN(64, 65, 66),
-            new VectorN(67, 68, 69),
-            new VectorN(70, 71, 72),
-            new VectorN(73, 74, 75),
-            new VectorN(76, 77, 78),
-            new VectorN(79, 80, 81),
-            new VectorN(82, 83, 84),
-            new VectorN(85, 86, 87),
-            new VectorN(250, 1, 90),
-        };
+        List<VectorN> pointsA = controller.pointsA;
+        List<VectorN> pointsB = controller.pointsB;
         List<VectorN> result = FindIntersections(pointsA, pointsB, 3);
         foreach (VectorN point in result)
         {
@@ -91,11 +28,23 @@ public class NewBehaviourScript : MonoBehaviour
 
     public List<VectorN> FindIntersections(List<VectorN> pointsA, List<VectorN> pointsB, int dimension)
     {
-        int kernelIndex = computeShader.FindKernel("CSMain");
-        int pointsCount = pointsA.Count;
+        float[] componentsA = pointsA.SelectMany(point => point.components).ToArray();
+        float[] componentsB = pointsB.SelectMany(point => point.components).ToArray();
+        return FindIntersections(componentsA, componentsB, dimension);
+    }
 
-        // 4 comes from numthreads 2x2
-        int groupSizeX = CeilingDivide(pointsCount, 4);
+    public List<VectorN> FindIntersections(float[] componentsA, float[] componentsB, int dimension)
+    {
+        if (componentsA.Length == 0 || componentsB.Length == 0)
+        {
+            return new List<VectorN>();
+        }
+
+        int kernelIndex = computeShader.FindKernel("CSMain");
+        int pointsCount = componentsA.Length / dimension;
+
+        // numthreads 4x4
+        int groupSizeX = CeilingDivide(pointsCount, 4 * 4);
         int groupSizeY = 1;
 
         computeShader.SetInt("dimension", dimension);
@@ -103,11 +52,11 @@ public class NewBehaviourScript : MonoBehaviour
         computeShader.SetInt("groupSizeX", groupSizeX);
         computeShader.SetInt("groupSizeY", groupSizeY);
 
-        int resultsLength = pointsA.Count * (dimension - 1);
+        int resultsLength = pointsCount * (dimension - 1);
 
         // points buffer
-        ComputeBuffer pointsABuffer = GetPointsBuffer(pointsA, dimension);
-        ComputeBuffer pointsBBuffer = GetPointsBuffer(pointsB, dimension);
+        ComputeBuffer pointsABuffer = GetPointsBuffer(componentsA);
+        ComputeBuffer pointsBBuffer = GetPointsBuffer(componentsB);
 
         computeShader.SetBuffer(kernelIndex, "pointsA", pointsABuffer);
         computeShader.SetBuffer(kernelIndex, "pointsB", pointsBBuffer);
@@ -117,8 +66,8 @@ public class NewBehaviourScript : MonoBehaviour
         computeShader.SetBuffer(kernelIndex, "result", resultBuffer);
 
         // debug buffer
-        ComputeBuffer debugXBuffer = new ComputeBuffer(2 * groupSizeX, sizeof(uint));
-        ComputeBuffer debugYBuffer = new ComputeBuffer(2 * groupSizeY, sizeof(uint));
+        ComputeBuffer debugXBuffer = new ComputeBuffer(4 * groupSizeX, sizeof(uint));
+        ComputeBuffer debugYBuffer = new ComputeBuffer(4 * groupSizeY, sizeof(uint));
         computeShader.SetBuffer(kernelIndex, "debugX", debugXBuffer);
         computeShader.SetBuffer(kernelIndex, "debugY", debugYBuffer);
 
@@ -127,8 +76,8 @@ public class NewBehaviourScript : MonoBehaviour
         float[] resultAry = new float[resultsLength];
         resultBuffer.GetData(resultAry);
 
-        uint[] debugX = new uint[2 * groupSizeX];
-        uint[] debugY = new uint[2 * groupSizeY];
+        uint[] debugX = new uint[4 * groupSizeX];
+        uint[] debugY = new uint[4 * groupSizeY];
         debugXBuffer.GetData(debugX);
         debugYBuffer.GetData(debugY);
 
@@ -152,10 +101,22 @@ public class NewBehaviourScript : MonoBehaviour
         return resultList;
     }
 
+    private ComputeBuffer GetPointsBuffer(float[] components)
+    {
+        int componentsLength = components.Length;
+        ComputeBuffer buffer = new ComputeBuffer(componentsLength, sizeof(float));
+        buffer.SetData(components);
+        return buffer;
+    }
+
     private ComputeBuffer GetPointsBuffer(List<VectorN> points, int dimension)
     {
         int componentsLength = points.Count * dimension;
-        float[] array = points.SelectMany(point => point.components).ToArray();
+        float[] array = new float[componentsLength];
+        for (int i = 0; i < points.Count; i++)
+        {
+            Array.Copy(points[i].components, 0, array, i * dimension, dimension);
+        }
         ComputeBuffer buffer = new ComputeBuffer(componentsLength, sizeof(float));
         buffer.SetData(array);
         return buffer;
