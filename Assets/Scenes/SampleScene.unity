@@ -380,7 +380,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41e8524a0c306f64493a3260a6ed7bcd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dimension: 6
+  dimension: 7
   debugLines: 0
   debugIntersectionDimension: 4
   draw3D: 1

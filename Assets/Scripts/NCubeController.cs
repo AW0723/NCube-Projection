@@ -225,13 +225,25 @@ public class NCubeController : MonoBehaviour
     {
         if (dimension <= 3) { return; }
 
-        List<VectorN> intersectionPoints = new List<VectorN>();
-        List<List<int[]>> allIntersectionSimplices = new List<List<int[]>>();
+        // for performance optimization
+        List<List<int[]>> simplices1 = new List<List<int[]>>();
+        List<List<int[]>> simplices2 = new List<List<int[]>>();
 
-        List<Dictionary<int, int>> savedIntersections;
+        List<VectorN> intersectionPoints = new List<VectorN>();
+        List<List<int[]>> allIntersectionSimplices = simplices1;
+
+        List<Dictionary<int, int>> savedIntersections = new List<Dictionary<int, int>>();
 
         List<VectorN> points = Points;
         List<List<int[]>> allSimplices = AllSimplices;
+
+        for (int i = 0; i < dimension; i++)
+        {
+            simplices1.Add(new List<int[]>());
+            simplices2.Add(new List<int[]>());
+            savedIntersections.Add(new Dictionary<int, int>());
+        }
+        savedIntersections.Add(new Dictionary<int, int>());
 
         for (int currDimension = dimension; currDimension > 3; currDimension--)
         {
@@ -255,21 +267,33 @@ public class NCubeController : MonoBehaviour
                 Array.Copy(pointB.components, 0, componentsB, i * currDimension, currDimension);
             }
 
-            intersectionPoints = shaderInterface.FindIntersections(componentsA, componentsB, currDimension);
-            allIntersectionSimplices = new List<List<int[]>>();
-            savedIntersections = new List<Dictionary<int, int>>();
-
-            for (int i = 0; i < currDimension; i++)
+            if (allIntersectionSimplices == simplices1)
             {
-                allIntersectionSimplices.Add(new List<int[]>());
-                savedIntersections.Add(new Dictionary<int, int>());
+                allIntersectionSimplices = simplices2;
             }
-            savedIntersections.Add(new Dictionary<int, int>());
+            else
+            {
+                allIntersectionSimplices = simplices1;
+            }
+
+            foreach (var simplices in allIntersectionSimplices)
+            {
+                simplices.Clear();
+            }
+
+            foreach (var savedIntersection in savedIntersections)
+            {
+                savedIntersection.Clear();
+            }
+
+            intersectionPoints = shaderInterface.FindIntersections(componentsA, componentsB, currDimension);
 
             FindSimplexIntersection(currDimension, 0, intersectionPoints, allIntersectionSimplices, savedIntersections, points, allSimplices);
 
+            // prepare for next loop
             points = intersectionPoints;
             allSimplices = allIntersectionSimplices;
+            savedIntersections.RemoveAt(savedIntersections.Count - 1);
         }
 
         IntersectionLines.Clear();
