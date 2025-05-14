@@ -228,6 +228,8 @@ public class NCubeController : MonoBehaviour
         List<VectorN> intersectionPoints = new List<VectorN>();
         List<List<int[]>> allIntersectionSimplices = new List<List<int[]>>();
 
+        List<Dictionary<int, int>> savedIntersections;
+
         List<VectorN> points = Points;
         List<List<int[]>> allSimplices = AllSimplices;
 
@@ -255,16 +257,16 @@ public class NCubeController : MonoBehaviour
 
             intersectionPoints = shaderInterface.FindIntersections(componentsA, componentsB, currDimension);
             allIntersectionSimplices = new List<List<int[]>>();
+            savedIntersections = new List<Dictionary<int, int>>();
 
             for (int i = 0; i < currDimension; i++)
             {
                 allIntersectionSimplices.Add(new List<int[]>());
+                savedIntersections.Add(new Dictionary<int, int>());
             }
+            savedIntersections.Add(new Dictionary<int, int>());
 
-            for (int currSimplex = 0; currSimplex < allSimplices[currDimension].Count; currSimplex++)
-            {
-                FindSimplexIntersection(currDimension, currSimplex, intersectionPoints, allIntersectionSimplices, points, allSimplices, currDimension);
-            }
+            FindSimplexIntersection(currDimension, 0, intersectionPoints, allIntersectionSimplices, savedIntersections, points, allSimplices);
 
             points = intersectionPoints;
             allSimplices = allIntersectionSimplices;
@@ -312,10 +314,10 @@ public class NCubeController : MonoBehaviour
     //    }
     //}
 
-    private int? FindSimplexIntersection(int currDimension, int simplexIndex, List<VectorN> intersectionPoints, List<List<int[]>> allIntersectionSimplices,
-                                        List<VectorN> points, List<List<int[]>> allSimplices, int dimension)
+    private int? FindSimplexIntersection(int currDimension, int simplexIndex,
+                    List<VectorN> intersectionPoints, List<List<int[]>> allIntersectionSimplices, List<Dictionary<int, int>> savedIntersections,
+                    List<VectorN> points, List<List<int[]>> allSimplices)
     {
-        int[] simplex = allSimplices[currDimension][simplexIndex];
         if (currDimension == 1)
         {
             if (IsValid(intersectionPoints[simplexIndex]))
@@ -328,12 +330,18 @@ public class NCubeController : MonoBehaviour
             }
         }
 
+        if (savedIntersections[currDimension].TryGetValue(simplexIndex, out int savedIntersection))
+        {
+            return savedIntersection;
+        }
+
         int lowerDimension = currDimension - 1;
+        int[] simplex = allSimplices[currDimension][simplexIndex];
 
         List<int> intersectionSimplices = new List<int>();
         foreach (int lowerSimplex in simplex)
         {
-            int? intersectionSimplex = FindSimplexIntersection(lowerDimension, lowerSimplex, intersectionPoints, allIntersectionSimplices, points, allSimplices, dimension);
+            int? intersectionSimplex = FindSimplexIntersection(lowerDimension, lowerSimplex, intersectionPoints, allIntersectionSimplices, savedIntersections, points, allSimplices);
             if (intersectionSimplex != null)
             {
                 intersectionSimplices.Add(intersectionSimplex.Value);
@@ -342,7 +350,9 @@ public class NCubeController : MonoBehaviour
         if (intersectionSimplices.Count > 0)
         {
             allIntersectionSimplices[lowerDimension].Add(intersectionSimplices.ToArray());
-            return allIntersectionSimplices[lowerDimension].Count - 1;
+            int intersectionIndex = allIntersectionSimplices[lowerDimension].Count - 1;
+            savedIntersections[currDimension].Add(simplexIndex, intersectionIndex);
+            return intersectionIndex;
         }
         return null;
     }

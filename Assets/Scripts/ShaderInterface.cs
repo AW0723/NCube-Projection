@@ -81,8 +81,8 @@ public class ShaderInterface : MonoBehaviour
         debugXBuffer.GetData(debugX);
         debugYBuffer.GetData(debugY);
 
-        Debug.Log(string.Join(" ", debugX));
-        Debug.Log(string.Join(" ", debugY));
+        //Debug.Log(string.Join(" ", debugX));
+        //Debug.Log(string.Join(" ", debugY));
 
         List<VectorN> resultList = new List<VectorN>();
         for (int i = 0; i < resultAry.Length; i += dimension - 1)
