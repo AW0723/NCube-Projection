@@ -11,13 +11,13 @@ public class ShaderInterface : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        List<VectorN> pointsA = controller.pointsA;
-        List<VectorN> pointsB = controller.pointsB;
-        List<VectorN> result = FindIntersections(pointsA, pointsB, 3);
-        foreach (VectorN point in result)
-        {
-            Debug.Log(point);
-        }
+        //List<VectorN> pointsA = controller.pointsA;
+        //List<VectorN> pointsB = controller.pointsB;
+        //List<VectorN> result = FindIntersections(pointsA, pointsB, 3);
+        //foreach (VectorN point in result)
+        //{
+        //    Debug.Log(point);
+        //}
     }
 
     // Update is called once per frame

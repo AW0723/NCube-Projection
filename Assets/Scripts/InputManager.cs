@@ -112,7 +112,11 @@ public class InputManager : MonoBehaviour
     {
         for (int i = 1; i < nCubeController.dimension; i++)
         {
-            nCubeController.Rotate(i, nCubeController.dimension, Random.Range(0, 2 * Mathf.PI));
+            for (int j = i + 1; j <= nCubeController.dimension; j++)
+            {
+                if (i == j) { continue; }
+                nCubeController.Rotate(i, j, Random.Range(0, 2 * Mathf.PI));
+            }
         }
     }
 
