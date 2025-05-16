@@ -11,13 +11,7 @@ public class ShaderInterface : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //List<VectorN> pointsA = controller.pointsA;
-        //List<VectorN> pointsB = controller.pointsB;
-        //List<VectorN> result = FindIntersections(pointsA, pointsB, 3);
-        //foreach (VectorN point in result)
-        //{
-        //    Debug.Log(point);
-        //}
+
     }
 
     // Update is called once per frame
@@ -106,19 +100,6 @@ public class ShaderInterface : MonoBehaviour
         int componentsLength = components.Length;
         ComputeBuffer buffer = new ComputeBuffer(componentsLength, sizeof(float));
         buffer.SetData(components);
-        return buffer;
-    }
-
-    private ComputeBuffer GetPointsBuffer(List<VectorN> points, int dimension)
-    {
-        int componentsLength = points.Count * dimension;
-        float[] array = new float[componentsLength];
-        for (int i = 0; i < points.Count; i++)
-        {
-            Array.Copy(points[i].components, 0, array, i * dimension, dimension);
-        }
-        ComputeBuffer buffer = new ComputeBuffer(componentsLength, sizeof(float));
-        buffer.SetData(array);
         return buffer;
     }
 

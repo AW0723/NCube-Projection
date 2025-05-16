@@ -106,6 +106,7 @@ public class InputManager : MonoBehaviour
                 }
                 break;
         }
+        nCubeController.FindIntersection();
     }
 
     private void RandomizeRotation()
@@ -118,6 +119,7 @@ public class InputManager : MonoBehaviour
                 nCubeController.Rotate(i, j, Random.Range(0, 2 * Mathf.PI));
             }
         }
+        nCubeController.FindIntersection();
     }
 
     private void SetTranslationAxis(int axis)

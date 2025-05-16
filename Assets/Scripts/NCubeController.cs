@@ -14,9 +14,6 @@ public class NCubeController : MonoBehaviour
 
     public ShaderInterface shaderInterface;
 
-    //public List<VectorN> pointsA;
-    //public List<VectorN> pointsB;
-
     private VectorN Origin;
     private List<VectorN> Points = new List<VectorN>();
     private List<List<int[]>> AllSimplices = new List<List<int[]>>();
@@ -36,39 +33,7 @@ public class NCubeController : MonoBehaviour
         }
 
         BuildNCube(dimension);
-        //foreach (var point in Points)
-        //{
-        //    Debug.Log(point);
-        //}
-        //foreach (var simplices in AllSimplices)
-        //{
-        //    foreach (var simplex in simplices)
-        //    {
-        //        Debug.Log(string.Join(" ", simplex));
-        //    }
-        //}
-
-        //pointsA = new List<VectorN>()
-        //{
-        //    new VectorN(1, 1, 1),
-        //    new VectorN(1, 1, 1),
-        //    new VectorN(1, 1, 1),
-        //};
-
-        //pointsB = new List<VectorN>()
-        //{
-        //    new VectorN(1, 1, -1),
-        //    new VectorN(-1, -1, -1),
-        //    new VectorN(-1, 1, 1),
-        //};
-
-        //for (int i = 0; i < pointsA.Count; i++)
-        //{
-        //    Debug.Log(FindLineIntersection(pointsA[i], pointsB[i], 3));
-        //}
-
         FindIntersection();
-        //FindIntersection2();
     }
 
     // Update is called once per frame
@@ -137,8 +102,6 @@ public class NCubeController : MonoBehaviour
             Points[i] += direction * amount;
         }
         Origin += direction * amount;
-
-        FindIntersection();
     }
 
     public void Rotate(int axisA, int axisB, float amount)
@@ -160,8 +123,6 @@ public class NCubeController : MonoBehaviour
         {
             Points[i] = rotationMatrix * (Points[i] - Origin) + Origin;
         }
-
-        FindIntersection();
     }
 
     private void BuildNCube(int dimension)
@@ -221,79 +182,7 @@ public class NCubeController : MonoBehaviour
         }
     }
 
-    private void FindIntersection2()
-    {
-        if (dimension <= 3) { return; }
-
-        // for performance optimization
-        List<List<int[]>> simplices1 = new List<List<int[]>>();
-        List<List<int[]>> simplices2 = new List<List<int[]>>();
-
-        List<VectorN> intersectionPoints = new List<VectorN>();
-        List<List<int[]>> allIntersectionSimplices = simplices1;
-
-        List<Dictionary<int, int>> savedIntersections = new List<Dictionary<int, int>>();
-
-        List<VectorN> points = Points;
-        List<List<int[]>> allSimplices = AllSimplices;
-
-        for (int i = 0; i < dimension; i++)
-        {
-            simplices1.Add(new List<int[]>());
-            simplices2.Add(new List<int[]>());
-            savedIntersections.Add(new Dictionary<int, int>());
-        }
-        savedIntersections.Add(new Dictionary<int, int>());
-
-        for (int currDimension = dimension; currDimension > 3; currDimension--)
-        {
-            DebugIntersectionLines[currDimension].Clear();
-            //foreach (var line in allSimplices[1])
-            //{
-            //    DebugIntersectionLines[currDimension].Add((points[line[0]].toVector3(), points[line[1]].toVector3()));
-            //}
-
-            List<int[]> lines = allSimplices[1];
-
-            (float[] componentsA, float[] componentsB) = FlattenLines(points, lines, currDimension);
-
-            if (allIntersectionSimplices == simplices1)
-            {
-                allIntersectionSimplices = simplices2;
-            }
-            else
-            {
-                allIntersectionSimplices = simplices1;
-            }
-
-            foreach (var simplices in allIntersectionSimplices)
-            {
-                simplices.Clear();
-            }
-
-            foreach (var savedIntersection in savedIntersections)
-            {
-                savedIntersection.Clear();
-            }
-
-            intersectionPoints = shaderInterface.FindIntersections(componentsA, componentsB, currDimension);
-
-            FindSimplexIntersection(currDimension, 0, intersectionPoints, allIntersectionSimplices, savedIntersections, points, allSimplices);
-
-            // prepare for next loop
-            points = intersectionPoints;
-            allSimplices = allIntersectionSimplices;
-            savedIntersections.RemoveAt(savedIntersections.Count - 1);
-        }
-
-        IntersectionLines.Clear();
-        foreach (var intersectionLine in allIntersectionSimplices[1])
-        {
-            IntersectionLines.Add((intersectionPoints[intersectionLine[0]].toVector3(), intersectionPoints[intersectionLine[1]].toVector3()));
-        }
-    }
-
-    private void FindIntersection()
+    public void FindIntersection()
     {
         if (dimension <= 3) { return; }
 
@@ -315,6 +204,7 @@ public class NCubeController : MonoBehaviour
 
         for (int currDimension = dimension; currDimension > 3; currDimension--)
         {
+            // for debugging
             DebugIntersectionLines[currDimension].Clear();
             foreach (var pair in allSimplices[1])
             {
@@ -322,6 +212,7 @@ public class NCubeController : MonoBehaviour
                 DebugIntersectionLines[currDimension].Add((points[line[0]].toVector3(), points[line[1]].toVector3()));
             }
 
+            // reset allIntersectionSimplices
             allIntersectionSimplices = new List<Dictionary<int, int[]>>();
             for (int i = 0; i < currDimension; i++)
             {
@@ -389,65 +280,6 @@ public class NCubeController : MonoBehaviour
         }
     }
 
-    private int? FindSimplexIntersection(int currDimension, int simplexIndex,
-                    List<VectorN> intersectionPoints, List<List<int[]>> allIntersectionSimplices, List<Dictionary<int, int>> savedIntersections,
-                    List<VectorN> points, List<List<int[]>> allSimplices)
-    {
-        if (currDimension == 1)
-        {
-            if (IsValid(intersectionPoints[simplexIndex]))
-            {
-                return simplexIndex;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        if (savedIntersections[currDimension].TryGetValue(simplexIndex, out int savedIntersection))
-        {
-            return savedIntersection;
-        }
-
-        int lowerDimension = currDimension - 1;
-        int[] simplex = allSimplices[currDimension][simplexIndex];
-
-        List<int> intersectionSimplices = new List<int>();
-        foreach (int lowerSimplex in simplex)
-        {
-            int? intersectionSimplex = FindSimplexIntersection(lowerDimension, lowerSimplex, intersectionPoints, allIntersectionSimplices, savedIntersections, points, allSimplices);
-            if (intersectionSimplex != null)
-            {
-                intersectionSimplices.Add(intersectionSimplex.Value);
-            }
-        }
-        if (intersectionSimplices.Count > 0)
-        {
-            allIntersectionSimplices[lowerDimension].Add(intersectionSimplices.ToArray());
-            int intersectionIndex = allIntersectionSimplices[lowerDimension].Count - 1;
-            savedIntersections[currDimension].Add(simplexIndex, intersectionIndex);
-            return intersectionIndex;
-        }
-        return null;
-    }
-
-    private (float[], float[]) FlattenLines(List<VectorN> points, List<int[]> lines, Dictionary<int, int> lineToPoint, int dimension)
-    {
-        float[] componentsA = new float[lines.Count * dimension];
-        float[] componentsB = new float[lines.Count * dimension];
-
-        for (int i = 0; i < lines.Count; i++)
-        {
-            int[] currLine = lines[i];
-            VectorN pointA = points[lineToPoint[currLine[0]]];
-            VectorN pointB = points[lineToPoint[currLine[1]]];
-            Array.Copy(pointA.components, 0, componentsA, i * dimension, dimension);
-            Array.Copy(pointB.components, 0, componentsB, i * dimension, dimension);
-        }
-        return (componentsA, componentsB);
-    }
-
     private (float[], float[]) FlattenLines(List<VectorN> points, List<int[]> lines, int dimension)
     {
         float[] componentsA = new float[lines.Count * dimension];
@@ -464,28 +296,6 @@ public class NCubeController : MonoBehaviour
         return (componentsA, componentsB);
     }
 
-    /// <summary>
-    /// Find the intersection point of a line with the plane where the nth dimension is 0
-    /// </summary>
-    /// <param name="pointA">Point A of the line</param>
-    /// <param name="pointB">Point B of the line</param>
-    /// <param name="dimension">The dimensional component that should be 0</param>
-    /// <returns></returns>
-    private VectorN FindLineIntersection(VectorN pointA, VectorN pointB, int dimension)
-    {
-        int index = dimension - 1;
-
-        if (pointA[index] == pointB[index] || pointA[index] * pointB[index] >= 0)
-        {
-            return null;
-        }
-        float k = pointA[index] / (pointA[index] - pointB[index]);
-        VectorN vectorA = pointA * (1 - k);
-        VectorN vectorB = pointB * k;
-        VectorN result = vectorA + vectorB;
-        return result.Reduce(dimension - 1);
-    }
-
     private bool IsValid(VectorN point)
     {
         float component = point.components[0];
@@ -495,4 +305,7 @@ public class NCubeController : MonoBehaviour
         }
         return true;
     }
+
+    public List<VectorN> GetPoints() => Points;
+    public List<List<int[]>> GetAllSimplices() => AllSimplices;
 }
