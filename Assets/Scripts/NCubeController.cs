@@ -188,6 +188,7 @@ public class NCubeController : MonoBehaviour
 
         List<VectorN> intersectionPoints = new List<VectorN>();
         List<Dictionary<int, int[]>> allIntersectionSimplices = new List<Dictionary<int, int[]>>();
+        Dictionary<int, int> lineToPoint = new Dictionary<int, int>();
 
         List<VectorN> points = Points;
         List<Dictionary<int, int[]>> allSimplices = new List<Dictionary<int, int[]>>();
@@ -220,7 +221,7 @@ public class NCubeController : MonoBehaviour
             }
 
             List<int[]> lines = new List<int[]>();
-            Dictionary<int, int> lineToPoint = new Dictionary<int, int>();
+            lineToPoint.Clear();
 
             foreach (var line in allSimplices[1])
             {
