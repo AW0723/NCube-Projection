@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8961848611798561505}
   - component: {fileID: 3073945717546184379}
   m_Layer: 0
-  m_Name: LineRenderer
+  m_Name: CubeLine
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
