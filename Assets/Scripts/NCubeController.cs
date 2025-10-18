@@ -13,6 +13,7 @@ public class NCubeController : MonoBehaviour
     public bool draw3D;
 
     public ShaderInterface shaderInterface;
+    public LineDrawer lineDrawer;
 
     private VectorN Origin;
     private List<VectorN> Points = new List<VectorN>();
@@ -68,7 +69,7 @@ public class NCubeController : MonoBehaviour
                 Gizmos.DrawSphere(line.Item1, 0.05f);
                 Gizmos.DrawSphere(line.Item2, 0.05f);
             }
-            Gizmos.DrawLineList(points.ToArray());
+            lineDrawer.DrawLineList(points.ToArray());
         }
     }
 
