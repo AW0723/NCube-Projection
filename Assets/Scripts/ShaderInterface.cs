@@ -34,7 +34,7 @@ public class ShaderInterface : MonoBehaviour
             return new List<VectorN>();
         }
 
-        int kernelIndex = computeShader.FindKernel("CSMain");
+        int kernelIndex = computeShader.FindKernel("CalcLineIntersection");
         int pointsCount = componentsA.Length / dimension;
 
         // numthreads 4x4

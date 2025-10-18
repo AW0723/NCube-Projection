@@ -1,8 +1,10 @@
 // Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel CSMain
 
 uint dimension;
 uint pointsCount;
+
+#pragma kernel CalcLineIntersection
+
 StructuredBuffer<float> pointsA;
 StructuredBuffer<float> pointsB;
 RWStructuredBuffer<float> result;
@@ -14,7 +16,7 @@ uint groupSizeX;
 uint groupSizeY;
 
 [numthreads(4,4,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+void CalcLineIntersection (uint3 id : SV_DispatchThreadID)
 {
     uint pointsIndex = id.y * (4 * groupSizeX) + id.x;
     if(pointsIndex >= pointsCount)
@@ -51,4 +53,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
             result[resultIndex + i] = componentA + componentB;
         }
     }
+}
+
+#pragma kernel CalcMatrixMultiplication
+
+StructuredBuffer<float> matrixComponents;
+
+[numthreads(4,4,1)]
+void CalcMatrixMultiplication(uint3 id : SV_DispatchThreadID)
+{
+    
 }
