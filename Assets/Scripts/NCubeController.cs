@@ -24,6 +24,8 @@ public class NCubeController : MonoBehaviour
 
     private Dictionary<int, List<(Vector3, Vector3)>> DebugIntersectionLines = new Dictionary<int, List<(Vector3, Vector3)>>();
 
+    private bool useShader = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -264,8 +266,19 @@ public class NCubeController : MonoBehaviour
             }
 
             // calculate line intersections
-            (float[] componentsA, float[] componentsB) = FlattenLines(points, lines, currDimension);
-            intersectionPoints = shaderInterface.FindIntersections(componentsA, componentsB, currDimension);
+            if (useShader)
+            {
+                (float[] componentsA, float[] componentsB) = FlattenLines(points, lines, currDimension);
+                intersectionPoints = shaderInterface.FindIntersections(componentsA, componentsB, currDimension);
+            }
+            else
+            {
+                intersectionPoints = new();
+                foreach (int[] line in lines)
+                {
+                    intersectionPoints.Add(FindLineIntersection(points[line[0]], points[line[1]], currDimension));
+                }
+            }
 
             // find face intersections
             foreach (var simplices in allSimplices[2])
@@ -331,8 +344,34 @@ public class NCubeController : MonoBehaviour
         return (componentsA, componentsB);
     }
 
+    /// <summary>
+    /// Find the intersection point of a line with the plane where the nth dimension is 0
+    /// </summary>
+    /// <param name="pointA">Point A of the line</param>
+    /// <param name="pointB">Point B of the line</param>
+    /// <param name="dimension">The dimensional component that should be 0</param>
+    /// <returns>The intersection between the two points</returns>
+    private VectorN FindLineIntersection(VectorN pointA, VectorN pointB, int dimension)
+    {
+        int index = dimension - 1;
+
+        if (pointA[index] == pointB[index] || pointA[index] * pointB[index] >= 0)
+        {
+            return null;
+        }
+        float k = pointA[index] / (pointA[index] - pointB[index]);
+        VectorN vectorA = pointA * (1 - k);
+        VectorN vectorB = pointB * k;
+        VectorN result = vectorA + vectorB;
+        return result.Reduce(dimension - 1);
+    }
+
     private bool IsValid(VectorN point)
     {
+        if (point == null)
+        {
+            return false;
+        }
         float component = point.components[0];
         if (float.IsNaN(component) || float.IsInfinity(component))
         {
