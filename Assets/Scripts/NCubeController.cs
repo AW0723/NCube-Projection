@@ -32,6 +32,11 @@ public class NCubeController : MonoBehaviour
 
     }
 
+    private void Update()
+    {
+        Draw3D();
+    }
+
     public void SetupWithDimension(int dimension)
     {
         this.dimension = dimension;
@@ -54,11 +59,23 @@ public class NCubeController : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        DebugDraw();
-        Draw3D();
+        DebugDrawAllProjection();
+        DebugDraw3D();
     }
 
     private void Draw3D()
+    {
+        List<Vector3> points = new();
+
+        foreach (var line in IntersectionLines)
+        {
+            points.Add(line.Item1);
+            points.Add(line.Item2);
+        }
+        lineDrawer.DrawLineList(points.ToArray());
+    }
+
+    private void DebugDraw3D()
     {
         if (draw3D)
         {
@@ -73,11 +90,10 @@ public class NCubeController : MonoBehaviour
                 Gizmos.DrawSphere(line.Item1, 0.05f);
                 Gizmos.DrawSphere(line.Item2, 0.05f);
             }
-            lineDrawer.DrawLineList(points.ToArray());
         }
     }
 
-    private void DebugDraw()
+    private void DebugDrawAllProjection()
     {
         if (debugLines)
         {

@@ -7,7 +7,7 @@ public class InputManager : MonoBehaviour
 {
     public NCubeController nCubeController;
     public GameObject mainCamera;
-    public int initialDimension = 5;
+    public int initialDimension = 7;
 
     // Cube settings
     public TMP_Dropdown dimensionDropdown;
@@ -27,7 +27,7 @@ public class InputManager : MonoBehaviour
     public float keySensitivity = 1.5f;
     public float scrollSensitivity = 20f;
 
-    private const int MAX_DIMENSION = 8;
+    private const int MAX_DIMENSION = 10;
 
     // Start is called before the first frame update
     void Start()
