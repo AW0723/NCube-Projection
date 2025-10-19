@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class InputManager : MonoBehaviour
@@ -94,21 +95,27 @@ public class InputManager : MonoBehaviour
         }
     }
 
+    #region UI events
     public void OnDimensionDropdownChanged(int value)
     {
         int dimension = int.Parse(dimensionDropdown.options[dimensionDropdown.value].text);
         SwitchToDimension(dimension);
     }
+    public void OnTranslationAxisChanged(int value)
+    {
+        translationSlider.value = nCubeController.Origin[value];
+    }
+
+    public void OnTranslationSliderUp()
+    {
+        EventSystem.current.SetSelectedGameObject(null);
+    }
+    #endregion
 
     private void SwitchToDimension(int dimension)
     {
         nCubeController.SetupWithDimension(dimension);
         PopulateDropdowns(dimension);
-    }
-
-    public void OnTranslationAxisChanged(int value)
-    {
-        translationSlider.value = nCubeController.Origin[value];
     }
 
     public void PerformTranslation(float amount)
