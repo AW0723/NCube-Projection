@@ -15,7 +15,7 @@ public class NCubeController : MonoBehaviour
     public ShaderInterface shaderInterface;
     public LineDrawer lineDrawer;
 
-    private VectorN Origin;
+    public VectorN Origin { private set; get; }
     private List<VectorN> Points = new List<VectorN>();
     private List<List<int[]>> AllSimplices = new List<List<int[]>>();
 
@@ -59,7 +59,7 @@ public class NCubeController : MonoBehaviour
         if (draw3D)
         {
             Gizmos.color = new Color(1, 1, 1, 1);
-            List<Vector3> points = new List<Vector3>();
+            List<Vector3> points = new();
 
             foreach (var line in IntersectionLines)
             {
@@ -78,7 +78,7 @@ public class NCubeController : MonoBehaviour
         if (debugLines)
         {
             Gizmos.color = Color.yellow;
-            List<Vector3> points = new List<Vector3>();
+            List<Vector3> points = new();
 
             if (DebugIntersectionLines.TryGetValue(debugIntersectionDimension, out List<(Vector3, Vector3)> lines))
             {
@@ -92,6 +92,17 @@ public class NCubeController : MonoBehaviour
                 }
                 Gizmos.DrawLineList(points.ToArray());
             }
+        }
+    }
+
+    public void SetTranslation(int axis, float amount)
+    {
+        VectorN originalPos = new(Origin);
+        Origin[axis - 1] = amount;
+        VectorN offset = Origin - originalPos;
+        for (int i = 0; i < Points.Count; i++)
+        {
+            Points[i] += offset;
         }
     }
 

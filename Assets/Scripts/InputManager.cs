@@ -1,15 +1,16 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class InputManager : MonoBehaviour
 {
     public NCubeController nCubeController;
-    public TMP_Dropdown transformationMethodDropdown;
+    public GameObject mainCamera;
 
     // Translation
-    public GameObject translationParent;
-    public TMP_Text translationAxisText;
+    public TMP_Dropdown translationAxisDropdown;
+    public Slider translationSlider;
 
     // Rotation
     public GameObject rotationParent;
@@ -19,55 +20,51 @@ public class InputManager : MonoBehaviour
     public float keySensitivity = 1.5f;
     public float scrollSensitivity = 20f;
 
-    private TransformationMethod SelectedMethod;
-    private int SelectedAxis;
-
     // Start is called before the first frame update
     void Start()
     {
-        SetTranslationAxis(nCubeController.dimension);
-        SelectedMethod = TransformationMethod.Rotation;
+        PopulateDropdowns();
+    }
 
+    private void PopulateDropdowns()
+    {
+        translationAxisDropdown.ClearOptions();
         rotationAxisADropdown.ClearOptions();
         rotationAxisBDropdown.ClearOptions();
+
         List<string> options = new List<string>();
         for (int i = 1; i <= nCubeController.dimension; i++)
         {
             options.Add(i.ToString());
         }
+        translationAxisDropdown.AddOptions(options);
         rotationAxisADropdown.AddOptions(options);
         rotationAxisBDropdown.AddOptions(options);
+
+        translationAxisDropdown.value = 0;
+        rotationAxisADropdown.value = 0;
         rotationAxisBDropdown.value = options.Count - 1;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
-        {
-            if (SelectedMethod == TransformationMethod.Translation)
-            {
-                SetTranslationAxis(SelectedAxis + 1);
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
-        {
-            if (SelectedMethod == TransformationMethod.Translation)
-            {
-                SetTranslationAxis(SelectedAxis - 1);
-            }
-        }
         if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A))
         {
-            PerformTransformation(-keySensitivity * Time.deltaTime);
+            PerformRotation(-keySensitivity * Time.deltaTime);
         }
         if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D))
         {
-            PerformTransformation(keySensitivity * Time.deltaTime);
+            PerformRotation(keySensitivity * Time.deltaTime);
         }
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
-            PerformTransformation(Input.GetAxis("Mouse ScrollWheel") * scrollSensitivity * Time.deltaTime);
+            float moveDistance = Input.GetAxis("Mouse ScrollWheel") * scrollSensitivity * Time.deltaTime;
+            Vector3 finalPos = mainCamera.transform.position + mainCamera.transform.forward * moveDistance;
+            if (finalPos.magnitude > 2)
+            {
+                mainCamera.transform.position = finalPos;
+            }
         }
         if (Input.GetKeyDown(KeyCode.R))
         {
@@ -75,38 +72,24 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    public void OnTransformationMethodChanged()
+    public void OnTranslationAxisChanged(int value)
     {
-        switch (transformationMethodDropdown.value)
-        {
-            case 0:
-                SelectedMethod = TransformationMethod.Rotation;
-                translationParent.SetActive(false);
-                rotationParent.SetActive(true);
-                break;
-            case 1:
-                SelectedMethod = TransformationMethod.Translation;
-                translationParent.SetActive(true);
-                rotationParent.SetActive(false);
-                break;
-        }
+        translationSlider.value = nCubeController.Origin[value];
     }
 
-    private void PerformTransformation(float amount)
+    public void PerformTranslation(float amount)
     {
-        switch (SelectedMethod)
-        {
-            case TransformationMethod.Translation:
-                nCubeController.Translate(SelectedAxis, amount);
-                break;
-            case TransformationMethod.Rotation:
-                if (rotationAxisADropdown.value != rotationAxisBDropdown.value)
-                {
-                    nCubeController.Rotate(rotationAxisADropdown.value + 1, rotationAxisBDropdown.value + 1, amount);
-                }
-                break;
-        }
+        nCubeController.SetTranslation(translationAxisDropdown.value + 1, amount);
         nCubeController.FindIntersection();
+    }
+
+    private void PerformRotation(float amount)
+    {
+        if (rotationAxisADropdown.value != rotationAxisBDropdown.value)
+        {
+            nCubeController.Rotate(rotationAxisADropdown.value + 1, rotationAxisBDropdown.value + 1, amount);
+            nCubeController.FindIntersection();
+        }
     }
 
     private void RandomizeRotation()
@@ -120,20 +103,5 @@ public class InputManager : MonoBehaviour
             }
         }
         nCubeController.FindIntersection();
-    }
-
-    private void SetTranslationAxis(int axis)
-    {
-        if (axis > 0 && axis <= nCubeController.dimension)
-        {
-            SelectedAxis = axis;
-            translationAxisText.text = "Current Axis: " + axis;
-        }
-    }
-
-    private enum TransformationMethod
-    {
-        Translation,
-        Rotation,
     }
 }
