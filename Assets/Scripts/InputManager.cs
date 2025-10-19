@@ -63,7 +63,7 @@ public class InputManager : MonoBehaviour
         rotationAxisADropdown.AddOptions(options);
         rotationAxisBDropdown.AddOptions(options);
 
-        translationAxisDropdown.value = 0;
+        translationAxisDropdown.value = options.Count - 1;
         rotationAxisADropdown.value = 0;
         rotationAxisBDropdown.value = options.Count - 1;
     }
