@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class NCubeController : MonoBehaviour
 {
-    public int dimension;
+    private int dimension;
 
     public bool debugLines;
     public int debugIntersectionDimension;
@@ -26,6 +27,18 @@ public class NCubeController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+
+    }
+
+    public void SetupWithDimension(int dimension)
+    {
+        this.dimension = dimension;
+
+        Points.Clear();
+        AllSimplices.Clear();
+        IntersectionLines.Clear();
+        DebugIntersectionLines.Clear();
+
         Origin = VectorN.Zero(dimension);
 
         for (int i = dimension; i > 3; i--)
@@ -35,17 +48,6 @@ public class NCubeController : MonoBehaviour
 
         BuildNCube(dimension);
         FindIntersection();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
-    private void FixedUpdate()
-    {
-
     }
 
     private void OnDrawGizmos()
@@ -116,6 +118,14 @@ public class NCubeController : MonoBehaviour
         Origin += direction * amount;
     }
 
+    public void ResetTranslation()
+    {
+        for (int i = 1; i <= dimension; i++)
+        {
+            SetTranslation(i, 0);
+        }
+    }
+
     public void Rotate(int axisA, int axisB, float amount)
     {
         if (axisA == axisB)
@@ -134,6 +144,18 @@ public class NCubeController : MonoBehaviour
         for (int i = 0; i < Points.Count; i++)
         {
             Points[i] = rotationMatrix * (Points[i] - Origin) + Origin;
+        }
+    }
+
+    public void RandomizeRotation()
+    {
+        for (int i = 1; i < dimension; i++)
+        {
+            for (int j = i + 1; j <= dimension; j++)
+            {
+                if (i == j) { continue; }
+                Rotate(i, j, Random.Range(0, 2 * Mathf.PI));
+            }
         }
     }
 

@@ -7,6 +7,10 @@ public class InputManager : MonoBehaviour
 {
     public NCubeController nCubeController;
     public GameObject mainCamera;
+    public int initialDimension = 5;
+
+    // Cube settings
+    public TMP_Dropdown dimensionDropdown;
 
     // Translation
     public TMP_Dropdown translationAxisDropdown;
@@ -17,23 +21,41 @@ public class InputManager : MonoBehaviour
     public TMP_Dropdown rotationAxisADropdown;
     public TMP_Dropdown rotationAxisBDropdown;
 
+    private bool positiveRotateHeldDown;
+    private bool negativeRotateHeldDown;
+
     public float keySensitivity = 1.5f;
     public float scrollSensitivity = 20f;
+
+    private const int MAX_DIMENSION = 8;
 
     // Start is called before the first frame update
     void Start()
     {
-        PopulateDropdowns();
+        PopulateDimensionDropdown();
+        SwitchToDimension(initialDimension);
     }
 
-    private void PopulateDropdowns()
+    private void PopulateDimensionDropdown()
+    {
+        dimensionDropdown.ClearOptions();
+        List<string> options = new();
+        for (int i = 3; i <= MAX_DIMENSION; i++)
+        {
+            options.Add(i.ToString());
+        }
+        dimensionDropdown.AddOptions(options);
+        dimensionDropdown.value = initialDimension - 3;
+    }
+
+    private void PopulateDropdowns(int dimension)
     {
         translationAxisDropdown.ClearOptions();
         rotationAxisADropdown.ClearOptions();
         rotationAxisBDropdown.ClearOptions();
 
-        List<string> options = new List<string>();
-        for (int i = 1; i <= nCubeController.dimension; i++)
+        List<string> options = new();
+        for (int i = 1; i <= dimension; i++)
         {
             options.Add(i.ToString());
         }
@@ -49,11 +71,11 @@ public class InputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A))
+        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A) || negativeRotateHeldDown)
         {
             PerformRotation(-keySensitivity * Time.deltaTime);
         }
-        if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D))
+        if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D) || positiveRotateHeldDown)
         {
             PerformRotation(keySensitivity * Time.deltaTime);
         }
@@ -70,6 +92,18 @@ public class InputManager : MonoBehaviour
         {
             RandomizeRotation();
         }
+    }
+
+    public void OnDimensionDropdownChanged(int value)
+    {
+        int dimension = int.Parse(dimensionDropdown.options[dimensionDropdown.value].text);
+        SwitchToDimension(dimension);
+    }
+
+    private void SwitchToDimension(int dimension)
+    {
+        nCubeController.SetupWithDimension(dimension);
+        PopulateDropdowns(dimension);
     }
 
     public void OnTranslationAxisChanged(int value)
@@ -92,16 +126,21 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    private void RandomizeRotation()
+    public void RandomizeRotation()
     {
-        for (int i = 1; i < nCubeController.dimension; i++)
-        {
-            for (int j = i + 1; j <= nCubeController.dimension; j++)
-            {
-                if (i == j) { continue; }
-                nCubeController.Rotate(i, j, Random.Range(0, 2 * Mathf.PI));
-            }
-        }
+        nCubeController.RandomizeRotation();
         nCubeController.FindIntersection();
     }
+
+    public void ResetTranslation()
+    {
+        nCubeController.ResetTranslation();
+        nCubeController.FindIntersection();
+        translationSlider.value = 0;
+    }
+
+    public void OnPositiveRotateButtonDown() { positiveRotateHeldDown = true; }
+    public void OnPositiveRotateButtonUp() { positiveRotateHeldDown = false; }
+    public void OnNegativeRotateButtonDown() { negativeRotateHeldDown = true; }
+    public void OnNegativeRotateButtonUp() { negativeRotateHeldDown = false; }
 }
