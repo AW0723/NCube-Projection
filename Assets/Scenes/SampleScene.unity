@@ -7480,7 +7480,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nCubeController: {fileID: 146909596}
   mainCamera: {fileID: 963194225}
-  initialDimension: 5
+  initialDimension: 7
   dimensionDropdown: {fileID: 2122777879}
   translationAxisDropdown: {fileID: 126165608}
   translationSlider: {fileID: 1679290652}
