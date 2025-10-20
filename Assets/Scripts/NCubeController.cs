@@ -236,7 +236,16 @@ public class NCubeController : MonoBehaviour
 
     public void FindIntersection()
     {
-        if (dimension <= 3) { return; }
+        IntersectionLines.Clear();
+
+        if (dimension <= 3)
+        {
+            foreach (var line in AllSimplices[1])
+            {
+                IntersectionLines.Add((Points[line[0]].toVector3(), Points[line[1]].toVector3()));
+            }
+            return;
+        }
 
         List<VectorN> intersectionPoints = new List<VectorN>();
         List<Dictionary<int, int[]>> allIntersectionSimplices = new List<Dictionary<int, int[]>>();
@@ -337,7 +346,6 @@ public class NCubeController : MonoBehaviour
             allSimplices = allIntersectionSimplices;
         }
 
-        IntersectionLines.Clear();
         foreach (var intersectionLine in allIntersectionSimplices[1])
         {
             IntersectionLines.Add((intersectionPoints[intersectionLine.Value[0]].toVector3(), intersectionPoints[intersectionLine.Value[1]].toVector3()));
