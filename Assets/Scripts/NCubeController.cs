@@ -165,14 +165,19 @@ public class NCubeController : MonoBehaviour
         }
     }
 
-    public void RandomizeRotation()
+    /// <summary>
+    /// Randomize rotation in every axes
+    /// </summary>
+    /// <param name="strength">Strength of the randomization, 1 for complete randomness</param>
+    public void RandomizeRotation(float strength)
     {
+        float maxValue = strength * 2 * Mathf.PI;
         for (int i = 1; i < dimension; i++)
         {
             for (int j = i + 1; j <= dimension; j++)
             {
                 if (i == j) { continue; }
-                Rotate(i, j, Random.Range(0, 2 * Mathf.PI));
+                Rotate(i, j, Random.Range(0, maxValue));
             }
         }
     }

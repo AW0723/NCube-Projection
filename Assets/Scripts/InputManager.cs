@@ -25,6 +25,8 @@ public class InputManager : MonoBehaviour
     private bool positiveRotateHeldDown;
     private bool negativeRotateHeldDown;
 
+    public float constRotationSpeed = 0.1f;
+
     public float keySensitivity = 1.5f;
     public float scrollSensitivity = 20f;
 
@@ -91,7 +93,11 @@ public class InputManager : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.R))
         {
-            RandomizeRotation();
+            RandomizeRotation(1);
+        }
+        if (Input.GetKey(KeyCode.K))
+        {
+            RandomizeRotation(constRotationSpeed * Time.deltaTime);
         }
     }
 
@@ -133,9 +139,9 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    public void RandomizeRotation()
+    public void RandomizeRotation(float strength)
     {
-        nCubeController.RandomizeRotation();
+        nCubeController.RandomizeRotation(strength);
         nCubeController.FindIntersection();
     }
 
