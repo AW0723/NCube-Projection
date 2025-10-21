@@ -83,10 +83,10 @@ public class InputManager : MonoBehaviour
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
             float moveDistance = Input.GetAxis("Mouse ScrollWheel") * scrollSensitivity * Time.deltaTime;
-            Vector3 finalPos = mainCamera.transform.position + mainCamera.transform.forward * moveDistance;
-            if (finalPos.magnitude > 2)
+            Vector3 finalPos = mainCamera.transform.localPosition + Vector3.forward * moveDistance;
+            if (finalPos.z < -2)
             {
-                mainCamera.transform.position = finalPos;
+                mainCamera.transform.localPosition = finalPos;
             }
         }
         if (Input.GetKeyDown(KeyCode.R))
