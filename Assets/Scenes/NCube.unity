@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 792594a5959570e49a0fc6b316eed040, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MouseDragRotate
-  rotateSpeed: 400
+  rotateSpeed: 2.5
 --- !u!1 &48427027
 GameObject:
   m_ObjectHideFlags: 0

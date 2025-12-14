@@ -14,8 +14,8 @@ public class MouseDragRotate : MonoBehaviour
         {
             float xRotation = Input.GetAxis("Mouse X") * rotateSpeed;
             float yRotation = Input.GetAxis("Mouse Y") * rotateSpeed;
-            transform.RotateAround(transform.position, Vector3.up, xRotation * Time.deltaTime);
-            transform.RotateAround(transform.position, transform.right, -yRotation * Time.deltaTime);
+            transform.RotateAround(transform.position, Vector3.up, xRotation);
+            transform.RotateAround(transform.position, transform.right, -yRotation);
         }
     }
 }
