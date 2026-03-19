@@ -15,12 +15,14 @@ public class NCubeController : MonoBehaviour
 
     public ShaderInterface shaderInterface;
     public LineDrawer lineDrawer;
+    public FaceDrawer faceDrawer;
 
     public VectorN Origin { private set; get; }
     private List<VectorN> Points = new List<VectorN>();
     private List<List<int[]>> AllSimplices = new List<List<int[]>>();
 
     private List<(Vector3, Vector3)> IntersectionLines = new List<(Vector3, Vector3)>();
+    private List<Vector3[]> IntersectionPlanes = new List<Vector3[]>();
 
     private Dictionary<int, List<(Vector3, Vector3)>> DebugIntersectionLines = new Dictionary<int, List<(Vector3, Vector3)>>();
 
@@ -73,6 +75,25 @@ public class NCubeController : MonoBehaviour
             points.Add(line.Item2);
         }
         lineDrawer.DrawLineList(points.ToArray());
+
+        faceDrawer.ClearFaces();
+        
+        // Calculate the centroid of all intersection points
+        Vector3 centroid = Vector3.zero;
+        foreach (var line in IntersectionLines)
+        {
+            centroid += line.Item1;
+            centroid += line.Item2;
+        }
+        if (IntersectionLines.Count > 0)
+        {
+            centroid /= IntersectionLines.Count * 2;
+        }
+        
+        foreach (var plane in IntersectionPlanes)
+        {
+            faceDrawer.DrawOneFace(centroid, plane);
+        }
     }
 
     private void DebugDraw3D()
@@ -237,6 +258,7 @@ public class NCubeController : MonoBehaviour
     public void FindIntersection()
     {
         IntersectionLines.Clear();
+        IntersectionPlanes.Clear();
 
         if (dimension <= 3)
         {
@@ -349,6 +371,27 @@ public class NCubeController : MonoBehaviour
         foreach (var intersectionLine in allIntersectionSimplices[1])
         {
             IntersectionLines.Add((intersectionPoints[intersectionLine.Value[0]].toVector3(), intersectionPoints[intersectionLine.Value[1]].toVector3()));
+        }
+
+        foreach (var intersectionPlane in allIntersectionSimplices[2])
+        {
+            List<Vector3> planePoints = new List<Vector3>();
+            HashSet<int> pointIndices = new HashSet<int>();
+
+            foreach (var lineIndex in intersectionPlane.Value)
+            {
+                int[] line = allIntersectionSimplices[1][lineIndex];
+
+                foreach (int pointIndex in line)
+                {
+                    if (pointIndices.Add(pointIndex))
+                    {
+                        planePoints.Add(intersectionPoints[pointIndex].toVector3());
+                    }
+                }
+            }
+
+            IntersectionPlanes.Add(planePoints.ToArray());
         }
     }
 

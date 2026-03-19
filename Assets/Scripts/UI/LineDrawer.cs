@@ -23,6 +23,11 @@ public class LineDrawer : MonoBehaviour
     public void DrawLineList(Vector3[] points)
     {
         int lineCount = points.Length / 2;
+
+        // Get the material from the parent LineRenderer if it exists
+        LineRenderer parentLineRenderer = GetComponent<LineRenderer>();
+        Material parentMaterial = parentLineRenderer != null ? parentLineRenderer.material : null;
+
         for (int i = 0; i < lineCount; i++)
         {
             if (i >= lineRenderers.Count)
@@ -35,6 +40,18 @@ public class LineDrawer : MonoBehaviour
             lineRenderer.positionCount = 2;
             lineRenderer.startWidth = lineWidth;
             lineRenderer.endWidth = lineWidth;
+
+            // Use the material from the parent LineRenderer if it exists
+            if (parentMaterial != null)
+            {
+                lineRenderer.material = parentMaterial;
+            }
+            else
+            {
+                // Fallback to default colors if parent doesn't have a material
+                lineRenderer.startColor = Color.yellow;
+                lineRenderer.endColor = Color.yellow;
+            }
         }
 
         for (int i = lineCount; i < lineRenderers.Count; i++)
