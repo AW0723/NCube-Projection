@@ -174,6 +174,11 @@ public class NCubeController : MonoBehaviour
         axisA = axisA - 1;
         axisB = axisB - 1;
 
+        if (axisA < 0 || axisA >= dimension || axisB < 0 || axisB >= dimension)
+        {
+            throw new Exception("Axes must be within the dimension range");
+        }
+
         MatrixNxN rotationMatrix = MatrixNxN.identity(dimension);
         rotationMatrix[axisA, axisA] = Mathf.Cos(amount);
         rotationMatrix[axisA, axisB] = -Mathf.Sin(amount);
@@ -262,10 +267,13 @@ public class NCubeController : MonoBehaviour
 
         if (dimension <= 3)
         {
-            foreach (var line in AllSimplices[1])
+            PopulateIntersectionLinesFromList(AllSimplices[1], Points);
+
+            if (dimension == 3)
             {
-                IntersectionLines.Add((Points[line[0]].toVector3(), Points[line[1]].toVector3()));
+                PopulateIntersectionPlanesFromLists(AllSimplices[2], AllSimplices[1], Points);
             }
+
             return;
         }
 
@@ -368,31 +376,8 @@ public class NCubeController : MonoBehaviour
             allSimplices = allIntersectionSimplices;
         }
 
-        foreach (var intersectionLine in allIntersectionSimplices[1])
-        {
-            IntersectionLines.Add((intersectionPoints[intersectionLine.Value[0]].toVector3(), intersectionPoints[intersectionLine.Value[1]].toVector3()));
-        }
-
-        foreach (var intersectionPlane in allIntersectionSimplices[2])
-        {
-            List<Vector3> planePoints = new List<Vector3>();
-            HashSet<int> pointIndices = new HashSet<int>();
-
-            foreach (var lineIndex in intersectionPlane.Value)
-            {
-                int[] line = allIntersectionSimplices[1][lineIndex];
-
-                foreach (int pointIndex in line)
-                {
-                    if (pointIndices.Add(pointIndex))
-                    {
-                        planePoints.Add(intersectionPoints[pointIndex].toVector3());
-                    }
-                }
-            }
-
-            IntersectionPlanes.Add(planePoints.ToArray());
-        }
+        PopulateIntersectionLinesFromDict(allIntersectionSimplices[1], intersectionPoints);
+        PopulateIntersectionPlanesFromDicts(allIntersectionSimplices[2], allIntersectionSimplices[1], intersectionPoints);
     }
 
     private (float[], float[]) FlattenLines(List<VectorN> points, List<int[]> lines, int dimension)
@@ -445,6 +430,68 @@ public class NCubeController : MonoBehaviour
             return false;
         }
         return true;
+    }
+
+    private void PopulateIntersectionLinesFromList(List<int[]> lines, List<VectorN> points)
+    {
+        foreach (var line in lines)
+        {
+            IntersectionLines.Add((points[line[0]].toVector3(), points[line[1]].toVector3()));
+        }
+    }
+
+    private void PopulateIntersectionLinesFromDict(Dictionary<int, int[]> lines, List<VectorN> points)
+    {
+        foreach (var line in lines.Values)
+        {
+            IntersectionLines.Add((points[line[0]].toVector3(), points[line[1]].toVector3()));
+        }
+    }
+
+    private void PopulateIntersectionPlanesFromLists(List<int[]> faces, List<int[]> lines, List<VectorN> points)
+    {
+        foreach (var face in faces)
+        {
+            List<Vector3> planePoints = new List<Vector3>();
+            HashSet<int> pointIndices = new HashSet<int>();
+
+            foreach (int lineIndex in face)
+            {
+                int[] line = lines[lineIndex];
+                foreach (int pointIndex in line)
+                {
+                    if (pointIndices.Add(pointIndex))
+                    {
+                        planePoints.Add(points[pointIndex].toVector3());
+                    }
+                }
+            }
+
+            IntersectionPlanes.Add(planePoints.ToArray());
+        }
+    }
+
+    private void PopulateIntersectionPlanesFromDicts(Dictionary<int, int[]> faces, Dictionary<int, int[]> lines, List<VectorN> points)
+    {
+        foreach (var face in faces.Values)
+        {
+            List<Vector3> planePoints = new List<Vector3>();
+            HashSet<int> pointIndices = new HashSet<int>();
+
+            foreach (var lineIndex in face)
+            {
+                int[] line = lines[lineIndex];
+                foreach (int pointIndex in line)
+                {
+                    if (pointIndices.Add(pointIndex))
+                    {
+                        planePoints.Add(points[pointIndex].toVector3());
+                    }
+                }
+            }
+
+            IntersectionPlanes.Add(planePoints.ToArray());
+        }
     }
 
     public List<VectorN> GetPoints() => Points;
