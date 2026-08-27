@@ -76,17 +76,34 @@ public class VectorN
 
     public static VectorN operator +(VectorN a, VectorN b)
     {
-        return new VectorN(Map(a.components, b.components, (x, y) => x + y));
+        if (a.components.Length != b.components.Length) throw new Exception("Dimensions do not match");
+        float[] result = new float[a.components.Length];
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = a.components[i] + b.components[i];
+        }
+        return new VectorN(result);
     }
 
     public static VectorN operator -(VectorN a, VectorN b)
     {
-        return new VectorN(Map(a.components, b.components, (x, y) => x - y));
+        if (a.components.Length != b.components.Length) throw new Exception("Dimensions do not match");
+        float[] result = new float[a.components.Length];
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = a.components[i] - b.components[i];
+        }
+        return new VectorN(result);
     }
 
     public static VectorN operator -(VectorN a)
     {
-        return new VectorN(a.components.Select(x => -x));
+        float[] result = new float[a.components.Length];
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = -a.components[i];
+        }
+        return new VectorN(result);
     }
 
     public static VectorN operator *(float num, VectorN vector)
@@ -108,7 +125,12 @@ public class VectorN
     public static float[] Map(float[] a, float[] b, Func<float, float, float> f)
     {
         if (a.Length != b.Length) throw new Exception("Dimensions do not match");
-        return a.Zip(b, (x, y) => f(x, y)).ToArray();
+        float[] result = new float[a.Length];
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = f(a[i], b[i]);
+        }
+        return result;
     }
 
     public static VectorN Zero(int dimension)
@@ -157,8 +179,10 @@ public class VectorN
 
     public static Vector3 toVector3(VectorN vector)
     {
-        VectorN reduced = vector.Reduce(3);
-        Vector3 result = new Vector3(reduced[0], reduced[1], reduced[2]);
-        return result;
+        float[] c = vector.components;
+        return new Vector3(
+            c.Length > 0 ? c[0] : 0,
+            c.Length > 1 ? c[1] : 0,
+            c.Length > 2 ? c[2] : 0);
     }
 }

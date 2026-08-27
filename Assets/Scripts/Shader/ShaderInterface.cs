@@ -8,18 +8,6 @@ public class ShaderInterface : MonoBehaviour
     public NCubeController controller;
     public ComputeShader computeShader;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     public List<VectorN> FindIntersections(List<VectorN> pointsA, List<VectorN> pointsB, int dimension)
     {
         float[] componentsA = pointsA.SelectMany(point => point.components).ToArray();

@@ -1,91 +1,49 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class FaceDrawer : MonoBehaviour
 {
-    private List<GameObject> faceGameObjects = new List<GameObject>();
+    private Mesh mesh;
+    private readonly List<Vector3> meshVertices = new();
+    private readonly List<int> meshTriangles = new();
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    /// <summary>
+    /// Rebuild all faces as a single mesh. The mesh and its GameObject are created once
+    /// and reused, so redrawing creates no objects that need destroying.
+    /// </summary>
+    /// <param name="origin">Point the faces should face away from (used to orient normals)</param>
+    /// <param name="faces">One unsorted vertex loop per face</param>
+    public void DrawFaces(Vector3 origin, List<Vector3[]> faces)
     {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
-    public void DrawOneFace(Vector3 origin, IEnumerable<Vector3> vertices)
-    {
-        // Convert vertices to a list for easier manipulation
-        List<Vector3> vertexList = new List<Vector3>(vertices);
-
-        // Need at least 3 vertices to form a face
-        if (vertexList.Count < 3)
+        if (mesh == null)
         {
-            Debug.LogWarning("DrawOneFace requires at least 3 vertices to form a face");
-            return;
+            mesh = CreateMeshObject();
         }
 
-        // Sort vertices in counter-clockwise order around their centroid
-        vertexList = SortVerticesCounterClockwise(vertexList);
-
-        // Calculate the centroid of the face
-        Vector3 centroid = Vector3.zero;
-        foreach (Vector3 vertex in vertexList)
+        meshVertices.Clear();
+        meshTriangles.Clear();
+        foreach (Vector3[] face in faces)
         {
-            centroid += vertex;
-        }
-        centroid /= vertexList.Count;
-
-        // Calculate the normal from the first two edges
-        Vector3 edge1 = vertexList[1] - vertexList[0];
-        Vector3 edge2 = vertexList[2] - vertexList[0];
-        Vector3 normal = Vector3.Cross(edge1, edge2).normalized;
-
-        // Direction from origin to face centroid - the normal should point this way
-        Vector3 outwardDirection = (centroid - origin).normalized;
-
-        // If the normal points toward the origin, reverse the vertex order
-        if (Vector3.Dot(normal, outwardDirection) < 0)
-        {
-            vertexList.Reverse();
+            AppendFace(origin, face);
         }
 
-        // Create a new mesh
-        Mesh mesh = new Mesh();
-
-        // Set vertices
-        mesh.vertices = vertexList.ToArray();
-
-        // Create triangles using fan triangulation
-        // This works by connecting all vertices to the first vertex
-        int[] triangles = new int[(vertexList.Count - 2) * 3];
-        for (int i = 0; i < vertexList.Count - 2; i++)
-        {
-            triangles[i * 3] = 0;
-            triangles[i * 3 + 1] = i + 1;
-            triangles[i * 3 + 2] = i + 2;
-        }
-
-        mesh.triangles = triangles;
-
-        // Recalculate mesh properties for proper rendering
+        mesh.Clear();
+        mesh.SetVertices(meshVertices);
+        mesh.SetTriangles(meshTriangles, 0);
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
+    }
 
-        // Create a new child GameObject for this face
-        GameObject faceObject = new GameObject("Face");
-        faceObject.transform.SetParent(transform);
-        faceGameObjects.Add(faceObject);
+    private Mesh CreateMeshObject()
+    {
+        Mesh newMesh = new Mesh { indexFormat = IndexFormat.UInt32 };
+        newMesh.MarkDynamic();
 
-        // Get or create a mesh filter
-        MeshFilter meshFilter = faceObject.AddComponent<MeshFilter>();
-        meshFilter.mesh = mesh;
+        GameObject faceObject = new GameObject("Faces");
+        faceObject.transform.SetParent(transform, false);
+        faceObject.AddComponent<MeshFilter>().mesh = newMesh;
 
-        // Add a mesh renderer
         MeshRenderer meshRenderer = faceObject.AddComponent<MeshRenderer>();
 
         // Use the material from the FaceDrawer's renderer if it exists
@@ -101,18 +59,51 @@ public class FaceDrawer : MonoBehaviour
             material.color = Color.white;
             meshRenderer.material = material;
         }
+
+        return newMesh;
     }
 
-    public void ClearFaces()
+    private void AppendFace(Vector3 origin, Vector3[] face)
     {
-        foreach (GameObject faceObject in faceGameObjects)
+        // Need at least 3 vertices to form a face
+        if (face.Length < 3)
         {
-            Destroy(faceObject);
+            Debug.LogWarning("DrawFaces requires at least 3 vertices to form a face");
+            return;
         }
-        faceGameObjects.Clear();
+
+        // Sort vertices in counter-clockwise order around their centroid
+        List<Vector3> vertexList = SortVerticesCounterClockwise(face);
+
+        // Calculate the centroid of the face
+        Vector3 centroid = Vector3.zero;
+        foreach (Vector3 vertex in vertexList)
+        {
+            centroid += vertex;
+        }
+        centroid /= vertexList.Count;
+
+        // Calculate the normal from the first two edges
+        Vector3 normal = Vector3.Cross(vertexList[1] - vertexList[0], vertexList[2] - vertexList[0]).normalized;
+
+        // If the normal points toward the origin, reverse the vertex order
+        if (Vector3.Dot(normal, (centroid - origin).normalized) < 0)
+        {
+            vertexList.Reverse();
+        }
+
+        // Fan triangulation: connect all vertices to the first vertex
+        int baseIndex = meshVertices.Count;
+        meshVertices.AddRange(vertexList);
+        for (int i = 1; i < vertexList.Count - 1; i++)
+        {
+            meshTriangles.Add(baseIndex);
+            meshTriangles.Add(baseIndex + i);
+            meshTriangles.Add(baseIndex + i + 1);
+        }
     }
 
-    private List<Vector3> SortVerticesCounterClockwise(List<Vector3> vertices)
+    private List<Vector3> SortVerticesCounterClockwise(IReadOnlyList<Vector3> vertices)
     {
         // Calculate the centroid of all vertices
         Vector3 centroid = Vector3.zero;

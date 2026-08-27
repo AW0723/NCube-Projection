@@ -28,8 +28,17 @@ public class NCubeController : MonoBehaviour
 
     private bool useShader = false;
 
+    // The keyed form of AllSimplices that FindIntersection's first projection step
+    // starts from; built once per setup instead of on every call, never mutated.
+    private List<Dictionary<int, int[]>> keyedSimplices = new();
+
+    // Set when the intersection geometry changes so Update only redraws then.
+    private bool geometryChanged = true;
+
     private void Update()
     {
+        if (!geometryChanged) { return; }
+        geometryChanged = false;
         Draw3D();
     }
 
@@ -50,6 +59,18 @@ public class NCubeController : MonoBehaviour
         }
 
         BuildNCube();
+
+        keyedSimplices = new List<Dictionary<int, int[]>>();
+        foreach (List<int[]> simplices in AllSimplices)
+        {
+            Dictionary<int, int[]> keyed = new(simplices.Count);
+            for (int i = 0; i < simplices.Count; i++)
+            {
+                keyed[i] = simplices[i];
+            }
+            keyedSimplices.Add(keyed);
+        }
+
         FindIntersection();
     }
 
@@ -76,12 +97,7 @@ public class NCubeController : MonoBehaviour
         }
 
         lineDrawer.DrawLineList(points.ToArray());
-
-        faceDrawer.ClearFaces();
-        foreach (var plane in IntersectionPlanes)
-        {
-            faceDrawer.DrawOneFace(centroid, plane);
-        }
+        faceDrawer.DrawFaces(centroid, IntersectionPlanes);
     }
 
     private void DebugDraw3D()
@@ -116,11 +132,12 @@ public class NCubeController : MonoBehaviour
 
     public void SetTranslation(int axis, float amount)
     {
-        VectorN offset = VectorN.Unit(dimension, axis - 1) * (amount - Origin[axis - 1]);
-        Origin[axis - 1] = amount;
-        for (int i = 0; i < Points.Count; i++)
+        int index = axis - 1;
+        float delta = amount - Origin[index];
+        Origin[index] = amount;
+        foreach (VectorN point in Points)
         {
-            Points[i] += offset;
+            point[index] += delta;
         }
     }
 
@@ -148,15 +165,16 @@ public class NCubeController : MonoBehaviour
             throw new Exception("Axes must be within the dimension range");
         }
 
-        MatrixNxN rotationMatrix = MatrixNxN.identity(dimension);
-        rotationMatrix[axisA, axisA] = Mathf.Cos(amount);
-        rotationMatrix[axisA, axisB] = -Mathf.Sin(amount);
-        rotationMatrix[axisB, axisA] = Mathf.Sin(amount);
-        rotationMatrix[axisB, axisB] = Mathf.Cos(amount);
-
-        for (int i = 0; i < Points.Count; i++)
+        // A plane rotation only changes the two rotated components, so rotate those
+        // in place instead of multiplying every point by a full NxN matrix.
+        float cos = Mathf.Cos(amount);
+        float sin = Mathf.Sin(amount);
+        foreach (VectorN point in Points)
         {
-            Points[i] = rotationMatrix * (Points[i] - Origin) + Origin;
+            float a = point[axisA] - Origin[axisA];
+            float b = point[axisB] - Origin[axisB];
+            point[axisA] = Origin[axisA] + a * cos - b * sin;
+            point[axisB] = Origin[axisB] + a * sin + b * cos;
         }
     }
 
@@ -230,6 +248,7 @@ public class NCubeController : MonoBehaviour
     {
         IntersectionLines.Clear();
         IntersectionPlanes.Clear();
+        geometryChanged = true;
 
         if (dimension <= 3)
         {
@@ -244,25 +263,20 @@ public class NCubeController : MonoBehaviour
         // Simplices are keyed by their original index so references stay valid as
         // simplices without intersections drop out at each projection step.
         List<VectorN> points = Points;
-        List<Dictionary<int, int[]>> allSimplices = new();
-        foreach (List<int[]> simplices in AllSimplices)
-        {
-            Dictionary<int, int[]> keyed = new();
-            for (int i = 0; i < simplices.Count; i++)
-            {
-                keyed[i] = simplices[i];
-            }
-            allSimplices.Add(keyed);
-        }
+        List<Dictionary<int, int[]>> allSimplices = keyedSimplices;
+        List<int> survivors = new();
 
         // Project down one dimension at a time by intersecting with the hyperplane
         // where that dimension's component is 0.
         for (int currDimension = dimension; currDimension > 3; currDimension--)
         {
-            DebugIntersectionLines[currDimension].Clear();
-            foreach (int[] line in allSimplices[1].Values)
+            if (debugLines)
             {
-                DebugIntersectionLines[currDimension].Add((points[line[0]].toVector3(), points[line[1]].toVector3()));
+                DebugIntersectionLines[currDimension].Clear();
+                foreach (int[] line in allSimplices[1].Values)
+                {
+                    DebugIntersectionLines[currDimension].Add((points[line[0]].toVector3(), points[line[1]].toVector3()));
+                }
             }
 
             List<Dictionary<int, int[]>> allIntersectionSimplices = new();
@@ -298,13 +312,17 @@ public class NCubeController : MonoBehaviour
             // a face survives as a line if any of its lines intersect the hyperplane
             foreach (var face in allSimplices[2])
             {
-                int[] intersections = face.Value
-                    .Where(line => IsValid(intersectionPoints[lineToPoint[line]]))
-                    .Select(line => lineToPoint[line])
-                    .ToArray();
-                if (intersections.Length > 0)
+                survivors.Clear();
+                foreach (int line in face.Value)
                 {
-                    allIntersectionSimplices[1].Add(face.Key, intersections);
+                    if (IsValid(intersectionPoints[lineToPoint[line]]))
+                    {
+                        survivors.Add(lineToPoint[line]);
+                    }
+                }
+                if (survivors.Count > 0)
+                {
+                    allIntersectionSimplices[1].Add(face.Key, survivors.ToArray());
                 }
             }
 
@@ -313,12 +331,17 @@ public class NCubeController : MonoBehaviour
             {
                 foreach (var simplex in allSimplices[simplexDim])
                 {
-                    int[] intersections = simplex.Value
-                        .Where(allIntersectionSimplices[simplexDim - 2].ContainsKey)
-                        .ToArray();
-                    if (intersections.Length > 0)
+                    survivors.Clear();
+                    foreach (int lowerSimplex in simplex.Value)
                     {
-                        allIntersectionSimplices[simplexDim - 1].Add(simplex.Key, intersections);
+                        if (allIntersectionSimplices[simplexDim - 2].ContainsKey(lowerSimplex))
+                        {
+                            survivors.Add(lowerSimplex);
+                        }
+                    }
+                    if (survivors.Count > 0)
+                    {
+                        allIntersectionSimplices[simplexDim - 1].Add(simplex.Key, survivors.ToArray());
                     }
                 }
             }
@@ -361,7 +384,12 @@ public class NCubeController : MonoBehaviour
             return null;
         }
         float k = pointA[index] / (pointA[index] - pointB[index]);
-        return (pointA * (1 - k) + pointB * k).Reduce(dimension - 1);
+        VectorN result = new(dimension - 1);
+        for (int i = 0; i < dimension - 1; i++)
+        {
+            result.components[i] = pointA.components[i] + k * (pointB.components[i] - pointA.components[i]);
+        }
+        return result;
     }
 
     private bool IsValid(VectorN point) =>

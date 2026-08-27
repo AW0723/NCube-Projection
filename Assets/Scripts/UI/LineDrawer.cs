@@ -6,59 +6,72 @@ public class LineDrawer : MonoBehaviour
     public float lineWidth;
     public GameObject lineRendererPrefab;
 
-    private List<GameObject> lineRenderers = new List<GameObject>();
+    private readonly List<LineRenderer> lineRenderers = new();
+    private Material lineMaterial;
+    private float appliedLineWidth;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Awake()
     {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
+        // Use the material from the parent LineRenderer if it exists
+        LineRenderer parentLineRenderer = GetComponent<LineRenderer>();
+        lineMaterial = parentLineRenderer != null ? parentLineRenderer.material : null;
     }
 
     public void DrawLineList(Vector3[] points)
     {
         int lineCount = points.Length / 2;
 
-        // Get the material from the parent LineRenderer if it exists
-        LineRenderer parentLineRenderer = GetComponent<LineRenderer>();
-        Material parentMaterial = parentLineRenderer != null ? parentLineRenderer.material : null;
+        // Re-style existing lines only when the width setting changed
+        if (lineWidth != appliedLineWidth)
+        {
+            appliedLineWidth = lineWidth;
+            foreach (LineRenderer lineRenderer in lineRenderers)
+            {
+                ApplyStyle(lineRenderer);
+            }
+        }
 
         for (int i = 0; i < lineCount; i++)
         {
             if (i >= lineRenderers.Count)
             {
-                lineRenderers.Add(Instantiate(lineRendererPrefab, transform));
+                lineRenderers.Add(CreateLineRenderer());
             }
-            LineRenderer lineRenderer = lineRenderers[i].GetComponent<LineRenderer>();
+            LineRenderer lineRenderer = lineRenderers[i];
+            lineRenderer.enabled = true;
             lineRenderer.SetPosition(0, points[2 * i]);
             lineRenderer.SetPosition(1, points[2 * i + 1]);
-            lineRenderer.positionCount = 2;
-            lineRenderer.startWidth = lineWidth;
-            lineRenderer.endWidth = lineWidth;
-
-            // Use the material from the parent LineRenderer if it exists
-            if (parentMaterial != null)
-            {
-                lineRenderer.material = parentMaterial;
-            }
-            else
-            {
-                // Fallback to default colors if parent doesn't have a material
-                lineRenderer.startColor = Color.yellow;
-                lineRenderer.endColor = Color.yellow;
-            }
         }
 
+        // Hide leftover renderers so they can be reused by a later, larger draw
         for (int i = lineCount; i < lineRenderers.Count; i++)
         {
-            LineRenderer lineRenderer = lineRenderers[i].GetComponent<LineRenderer>();
-            lineRenderer.startWidth = 0;
-            lineRenderer.endWidth = 0;
+            lineRenderers[i].enabled = false;
+        }
+    }
+
+    private LineRenderer CreateLineRenderer()
+    {
+        LineRenderer lineRenderer = Instantiate(lineRendererPrefab, transform).GetComponent<LineRenderer>();
+        lineRenderer.positionCount = 2;
+        ApplyStyle(lineRenderer);
+        return lineRenderer;
+    }
+
+    private void ApplyStyle(LineRenderer lineRenderer)
+    {
+        lineRenderer.startWidth = lineWidth;
+        lineRenderer.endWidth = lineWidth;
+
+        if (lineMaterial != null)
+        {
+            lineRenderer.material = lineMaterial;
+        }
+        else
+        {
+            // Fallback to default colors if the parent doesn't have a material
+            lineRenderer.startColor = Color.yellow;
+            lineRenderer.endColor = Color.yellow;
         }
     }
 }
